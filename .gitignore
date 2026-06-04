@@ -1,0 +1,71 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Pytest
+.pytest_cache/
+
+# AI Agent Frameworks and Local Tools
+.ctx/
+.gitnexus/
+.claude/
+.agents/
+.windsurf/
+.beads/
+.aidevops.json
+todo/
+pocs/
+schemas/
+migrations/
+seeds/
+AGENTS.md
+CLAUDE.md
+TODO.md
+
+# Large Models and Weights
+models/
+model_out/
+*.pt
+*.pth
+*.onnx
+*.bin
+
+# Sample/Temp Files
+*.ogg
+*.wav
+*.mp3
+*.flac
+global_search.db

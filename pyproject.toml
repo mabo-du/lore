@@ -1,0 +1,47 @@
+[project]
+name = "lore"
+version = "0.1.0"
+description = "Privacy-first, local-only oral history transcription."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "faster-whisper",
+    "PyQt6",
+    "imageio-ffmpeg",
+    "platformdirs",
+    "lxml",
+    "numpy",
+    "tsdownsample",
+    "pyannote-audio==3.3.2",
+    "resemblyzer>=0.1.4",
+    "gliner2-onnx>=0.1.1",
+    "llama-cpp-python>=0.3.25",
+    "sqlite-vec>=0.1.9",
+    "fastembed>=0.8.0",
+]
+
+[project.optional-dependencies]
+diarization = [
+    "pyannote-audio",
+    "Resemblyzer"
+]
+
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+lore = "src.main:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.20.0",
+]

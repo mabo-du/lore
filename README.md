@@ -1,0 +1,77 @@
+<div align="center">
+  <img src="https://img.shields.io/badge/Local_First-100%25-brightgreen.svg?style=for-the-badge" alt="Local First">
+  <img src="https://img.shields.io/badge/Python-3.12+-blue.svg?style=for-the-badge&logo=python" alt="Python 3.12+">
+  <img src="https://img.shields.io/badge/PyQt6-UI-blueviolet.svg?style=for-the-badge" alt="PyQt6">
+  <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="MIT License">
+  
+  <h1>Lore 🎙️</h1>
+  
+  <p><strong>Privacy-First, Local-Only Oral History Transcription & Archiving</strong></p>
+</div>
+
+---
+
+**Lore** is a desktop application designed for historians, archivists, and researchers. It provides state-of-the-art AI transcription, speaker diarization, named entity recognition, and translation—**100% offline, on your own hardware.**
+
+No data leaves your computer. No cloud subscriptions. Just powerful, open-source AI packaged into a clean, intuitive PyQt6 interface.
+
+## ✨ Features
+
+- 🎧 **Offline Transcription:** Powered by `faster-whisper`, optimized for CPU inference with low memory overhead (< 8GB RAM).
+- 🗣️ **Speaker Diarization:** Automatically identifies and labels different speakers using `pyannote.audio`.
+- 🔍 **Word-Level Confidence:** Low-confidence words are visually highlighted so you can quickly spot potential hallucinations.
+- 🌍 **Local Translation:** Translate transcripts to over 200 languages completely offline using Meta's `NLLB-200` model.
+- 📖 **Custom Vocabulary:** Provide local jargon, proper nouns, and historical terms to guide Whisper's decoding graph for maximum accuracy.
+- 🏷️ **Named Entity Recognition:** Uses `GLiNER` to automatically extract people, organizations, dates, and locations.
+- 📦 **Archival Exporting:** Export your work to the **OHMS XML** format or create an **RFC 8493 BagIt** archival package with SHA-256 checksum verification.
+- 🔎 **Global Archive Search:** A unified SQLite database (`FTS5` + `sqlite-vec`) lets you instantly search across all your past projects using keyword or semantic/conceptual search.
+
+## 🚀 Installation
+
+Lore requires **Python 3.12+** and is cross-platform (Windows, macOS, Linux).
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/yourusername/lore.git
+   cd lore
+   ```
+
+2. **Set up a virtual environment (recommended with `uv` or `venv`):**
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+
+3. **Install the application:**
+   ```bash
+   pip install -e .
+   ```
+
+## 🎮 Usage
+
+Start the Lore application from your terminal:
+
+```bash
+lore
+```
+
+1. **Select an Audio File:** Click "Browse" to select any standard audio format (WAV, MP3, M4A).
+2. **Configure Settings:** Click the ⚙️ Settings icon to set your Custom Vocabulary.
+3. **Transcribe & Diarize:** Click "Transcribe" on the toolbar. If you want speaker labels, check the "Diarize" box.
+4. **Edit & Review:** Play the audio, click on segments to edit them, and review any low-confidence words highlighted in red.
+5. **Export:** Open the Metadata panel, fill out the project details, and export to **OHMS XML** or an Archival **BagIt Package**.
+
+## 🏗️ Architecture
+
+Lore is designed with strict sequential memory management to run on older hardware. 
+- Models are loaded into memory one at a time (e.g., Whisper loads, transcribes, unloads -> NLLB loads, translates, unloads).
+- Heavy use of CTranslate2 (INT8 quantization) ensures models run blazingly fast without needing a dedicated GPU.
+- The UI runs asynchronously using PyQt6's `QThread` and Signals, keeping the interface completely responsive during heavy AI workloads.
+
+## 🤝 Contributing
+
+Lore is an open-source project. We welcome pull requests, bug reports, and feature requests. Please see our [User Guide](USER_GUIDE.md) for more detailed workflows and documentation on the codebase.
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
