@@ -15,7 +15,7 @@ dependencies = [
     "pyannote-audio==3.3.2",
     "resemblyzer>=0.1.4",
     "gliner2-onnx>=0.1.1",
-    "llama-cpp-python>=0.3.25",
+    "llama-cpp-python>=0.3.26",
     "sqlite-vec>=0.1.9",
     "fastembed>=0.8.0",
 ]
