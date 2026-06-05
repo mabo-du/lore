@@ -1,19 +1,26 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLineEdit, 
-    QPushButton, QListWidget, QLabel, QListWidgetItem,
-    QRadioButton, QButtonGroup, QWidget
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
+    QListWidget,
+    QLabel,
+    QListWidgetItem,
+    QRadioButton,
+    QButtonGroup,
+    QWidget,
 )
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QFont
 from lore_core.global_search import GlobalSearchIndex
 import datetime
+
 
 class GlobalSearchDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Global Archive Search")
         self.resize(700, 500)
-        
+
         self.setStyleSheet("""
             QDialog { background-color: #121212; color: #cccccc; }
             QLineEdit {
@@ -60,13 +67,13 @@ class GlobalSearchDialog(QDialog):
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search all transcripts...")
         self.search_input.returnPressed.connect(self.perform_search)
-        
+
         self.btn_search = QPushButton("Search")
         self.btn_search.clicked.connect(self.perform_search)
-        
+
         search_layout.addWidget(self.search_input)
         search_layout.addWidget(self.btn_search)
-        
+
         layout.addLayout(search_layout)
 
         # Options
@@ -97,15 +104,15 @@ class GlobalSearchDialog(QDialog):
             self.results_list.clear()
             self.results_list.addItem("Search engine not available.")
             return
-            
+
         query = self.search_input.text().strip()
         if not query:
             return
-            
+
         self.results_list.clear()
         self.btn_search.setEnabled(False)
         self.search_input.setEnabled(False)
-        
+
         # In a real app this should be threaded so it doesn't freeze the UI,
         # but for simplicity we run it inline here.
         try:
@@ -113,34 +120,36 @@ class GlobalSearchDialog(QDialog):
                 results = self.search_index.search_keyword(query)
             else:
                 results = self.search_index.search_semantic(query)
-                
+
             if not results:
                 self.results_list.addItem("No results found.")
             else:
                 for res in results:
                     item = QListWidgetItem()
-                    
+
                     time_str = f"[{self._format_time(res['start_ms'])}]"
-                    proj_id = res['project_id']
-                    snippet = res['snippet']
-                    
+                    proj_id = res["project_id"]
+                    snippet = res["snippet"]
+
                     # Create custom widget for rich text display
                     widget = QWidget()
                     w_layout = QVBoxLayout(widget)
                     w_layout.setContentsMargins(5, 5, 5, 5)
-                    
-                    header = QLabel(f"<b style='color:#007acc;'>{proj_id}</b> <span style='color:gray;'>{time_str}</span>")
+
+                    header = QLabel(
+                        f"<b style='color:#007acc;'>{proj_id}</b> <span style='color:gray;'>{time_str}</span>"
+                    )
                     body = QLabel(snippet)
                     body.setWordWrap(True)
                     body.setStyleSheet("color: #dddddd; font-size: 13px;")
-                    
+
                     w_layout.addWidget(header)
                     w_layout.addWidget(body)
-                    
+
                     item.setSizeHint(widget.sizeHint())
                     self.results_list.addItem(item)
                     self.results_list.setItemWidget(item, widget)
-                    
+
         except Exception as e:
             self.results_list.addItem(f"Search failed: {e}")
         finally:

@@ -1,6 +1,6 @@
 [project]
 name = "lore"
-version = "0.1.0"
+version = "0.1.1"
 description = "Privacy-first, local-only oral history transcription."
 readme = "README.md"
 requires-python = ">=3.12"

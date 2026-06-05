@@ -1,18 +1,27 @@
 from pathlib import Path
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog, QCheckBox
+from PyQt6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QLabel,
+    QPushButton,
+    QFileDialog,
+    QCheckBox,
+)
 from PyQt6.QtCore import Qt, pyqtSignal, QSettings
+
 
 class FilePickerWidget(QWidget):
     """
     Handles drag-and-drop and file dialog selection for audio files.
     """
+
     file_selected = pyqtSignal(Path)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.setMinimumSize(400, 200)
-        
+
         self.setStyleSheet("""
             QWidget {
                 background-color: #1e1e1e;
@@ -23,11 +32,11 @@ class FilePickerWidget(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
+
         self.label = QLabel("Drag and drop an audio file here\nor click to browse")
         self.label.setStyleSheet("color: #cccccc; font-size: 14px; border: none;")
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
+
         self.browse_btn = QPushButton("Browse Files")
         self.browse_btn.setStyleSheet("""
             QPushButton {
@@ -47,24 +56,26 @@ class FilePickerWidget(QWidget):
 
         layout.addWidget(self.label)
         layout.addSpacing(16)
-        
+
         self.chk_diarize = QCheckBox("Enable Speaker Diarization (Beta)")
         self.chk_diarize.setStyleSheet("color: #cccccc; border: none; font-size: 13px;")
-        
+
         layout.addWidget(self.chk_diarize, alignment=Qt.AlignmentFlag.AlignHCenter)
         layout.addSpacing(16)
         layout.addWidget(self.browse_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Restore last state
         settings = QSettings("HeritageTools", "Lore")
-        self.chk_diarize.setChecked(settings.value("diarization/enabled", False, type=bool))
+        self.chk_diarize.setChecked(
+            settings.value("diarization/enabled", False, type=bool)
+        )
 
     def _open_file_dialog(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Select Audio File",
             "",
-            "Audio Files (*.mp3 *.wav *.m4a *.ogg *.flac);;All Files (*)"
+            "Audio Files (*.mp3 *.wav *.m4a *.ogg *.flac);;All Files (*)",
         )
         if file_path:
             settings = QSettings("HeritageTools", "Lore")

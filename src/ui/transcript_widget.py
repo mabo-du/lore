@@ -1,10 +1,13 @@
 from PyQt6.QtWidgets import (
-    QListView, QStyledItemDelegate, QTextEdit, 
-    QStyleOptionViewItem, QApplication
+    QListView,
+    QStyledItemDelegate,
+    QTextEdit,
+    QStyleOptionViewItem,
 )
-from PyQt6.QtGui import QPainter, QColor, QFontMetrics, QFont, QTextDocument, QAbstractTextDocumentLayout
+from PyQt6.QtGui import QPainter, QColor, QFontMetrics, QFont, QTextDocument
 from PyQt6.QtCore import Qt, QSize, QModelIndex, QRect
 import datetime
+
 
 class TranscriptDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
@@ -20,15 +23,37 @@ class TranscriptDelegate(QStyledItemDelegate):
 
     # Confidence level → visual styling map
     CONFIDENCE_STYLES = {
-        "high":          {"border": None,       "badge": None,              "badge_bg": None,                "text_alpha": 255},
-        "medium":        {"border": "#b8860b",  "badge": "⚠ Review",        "badge_bg": "#3d3520",           "text_alpha": 255},
-        "low":           {"border": "#cc7a00",  "badge": "⚠ Low Confidence","badge_bg": "#3d2e10",           "text_alpha": 255},
-        "hallucination": {"border": "#cc3333",  "badge": "🔴 Hallucination?","badge_bg": "#3d1515",          "text_alpha": 200},
-        "non_speech":    {"border": "#555555",  "badge": "🔇 Non-Speech",   "badge_bg": "#2a2a2a",           "text_alpha": 120},
-        "unknown":       {"border": None,       "badge": None,              "badge_bg": None,                "text_alpha": 255},
+        "high": {"border": None, "badge": None, "badge_bg": None, "text_alpha": 255},
+        "medium": {
+            "border": "#b8860b",
+            "badge": "⚠ Review",
+            "badge_bg": "#3d3520",
+            "text_alpha": 255,
+        },
+        "low": {
+            "border": "#cc7a00",
+            "badge": "⚠ Low Confidence",
+            "badge_bg": "#3d2e10",
+            "text_alpha": 255,
+        },
+        "hallucination": {
+            "border": "#cc3333",
+            "badge": "🔴 Hallucination?",
+            "badge_bg": "#3d1515",
+            "text_alpha": 200,
+        },
+        "non_speech": {
+            "border": "#555555",
+            "badge": "🔇 Non-Speech",
+            "badge_bg": "#2a2a2a",
+            "text_alpha": 120,
+        },
+        "unknown": {"border": None, "badge": None, "badge_bg": None, "text_alpha": 255},
     }
 
-    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
+    def paint(
+        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
+    ):
         painter.save()
 
         # Get data from model
@@ -40,28 +65,38 @@ class TranscriptDelegate(QStyledItemDelegate):
         confidence = index.data(index.model().ConfidenceLevelRole) or "unknown"
         words = index.data(index.model().WordsRole)
 
-        style = self.CONFIDENCE_STYLES.get(confidence, self.CONFIDENCE_STYLES["unknown"])
+        style = self.CONFIDENCE_STYLES.get(
+            confidence, self.CONFIDENCE_STYLES["unknown"]
+        )
 
         time_str = f"[{self._format_time(start_ms)} - {self._format_time(end_ms)}]"
         if speaker:
             time_str += f" | {speaker}"
 
         # Background
-        bg_color = QColor("#2d2d2d") if option.state & QStyleOptionViewItem.StateFlag.State_Selected else QColor("#1e1e1e")
+        bg_color = (
+            QColor("#2d2d2d")
+            if option.state & QStyleOptionViewItem.StateFlag.State_Selected
+            else QColor("#1e1e1e")
+        )
         painter.fillRect(option.rect, bg_color)
 
         # Left border indicator for flagged segments
         border_color = style["border"]
         if border_color:
             painter.fillRect(
-                option.rect.left(), option.rect.top(),
-                4, option.rect.height(),
-                QColor(border_color)
+                option.rect.left(),
+                option.rect.top(),
+                4,
+                option.rect.height(),
+                QColor(border_color),
             )
 
         # Adjust rect for content (with extra left margin if bordered)
         left_offset = 8 if border_color else 0
-        rect = option.rect.adjusted(self.margins + left_offset, self.margins, -self.margins, -self.margins)
+        rect = option.rect.adjusted(
+            self.margins + left_offset, self.margins, -self.margins, -self.margins
+        )
 
         # Draw time/speaker header
         text_color = QColor("#cccccc")
@@ -74,7 +109,7 @@ class TranscriptDelegate(QStyledItemDelegate):
         font.setPointSize(10)
         painter.setFont(font)
         painter.setPen(time_color)
-        
+
         fm = QFontMetrics(font)
         time_rect = fm.boundingRect(rect, Qt.TextFlag.TextSingleLine, time_str)
         painter.drawText(rect.left(), rect.top() + fm.ascent(), time_str)
@@ -107,41 +142,48 @@ class TranscriptDelegate(QStyledItemDelegate):
         font.setPointSize(12)
         painter.setFont(font)
         painter.setPen(text_color)
-        
+
         text_y = rect.top() + time_rect.height() + self.spacing
-        text_rect = QRect(rect.left(), text_y, rect.width(), rect.height() - time_rect.height() - self.spacing)
-        
+        text_rect = QRect(
+            rect.left(),
+            text_y,
+            rect.width(),
+            rect.height() - time_rect.height() - self.spacing,
+        )
+
         # Using QTextDocument for rich text/word wrapping
         doc = QTextDocument()
         doc.setDefaultFont(font)
-        
+
         display_text = text
         if words:
             html_words = []
             for w in words:
-                if w.get('prob', 1.0) < 0.6:
-                    html_words.append(f"<span style='color: #ffaa99; text-decoration: underline;'>{w['word']}</span>")
+                if w.get("prob", 1.0) < 0.6:
+                    html_words.append(
+                        f"<span style='color: #ffaa99; text-decoration: underline;'>{w['word']}</span>"
+                    )
                 else:
-                    html_words.append(w['word'])
+                    html_words.append(w["word"])
             display_text = "".join(html_words)
 
         if translation:
             # We add styling so the translation stands out
             display_text += f"<br><br><span style='color: #a0c0ff;'><b>Translation:</b> {translation}</span>"
-            
+
         doc.setHtml(display_text)
         doc.setTextWidth(text_rect.width())
-        
+
         painter.translate(text_rect.topLeft())
         doc.drawContents(painter)
-        
+
         painter.restore()
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
         text = index.data(index.model().TextRole)
         translation = index.data(index.model().TranslationRole)
         words = index.data(index.model().WordsRole)
-        
+
         font = option.font
         font.setBold(True)
         font.setPointSize(10)
@@ -150,34 +192,38 @@ class TranscriptDelegate(QStyledItemDelegate):
 
         font.setBold(False)
         font.setPointSize(12)
-        
+
         doc = QTextDocument()
         doc.setDefaultFont(font)
-        
+
         display_text = text
         if words:
             html_words = []
             for w in words:
-                if w.get('prob', 1.0) < 0.6:
-                    html_words.append(f"<span style='color: #ffaa99; text-decoration: underline;'>{w['word']}</span>")
+                if w.get("prob", 1.0) < 0.6:
+                    html_words.append(
+                        f"<span style='color: #ffaa99; text-decoration: underline;'>{w['word']}</span>"
+                    )
                 else:
-                    html_words.append(w['word'])
+                    html_words.append(w["word"])
             display_text = "".join(html_words)
-            
+
         if translation:
             display_text += f"<br><br><span style='color: #a0c0ff;'><b>Translation:</b> {translation}</span>"
         doc.setHtml(display_text)
         doc.setTextWidth(option.rect.width() - 2 * self.margins)
-        
+
         text_height = int(doc.size().height())
-        
+
         total_height = self.margins * 2 + time_height + self.spacing + text_height
         return QSize(option.rect.width(), total_height)
 
     def createEditor(self, parent, option, index):
         editor = QTextEdit(parent)
         editor.setAcceptRichText(False)
-        editor.setStyleSheet("background-color: #2d2d2d; color: white; border: 1px solid #007acc;")
+        editor.setStyleSheet(
+            "background-color: #2d2d2d; color: white; border: 1px solid #007acc;"
+        )
         return editor
 
     def setEditorData(self, editor, index):
@@ -186,6 +232,7 @@ class TranscriptDelegate(QStyledItemDelegate):
 
     def setModelData(self, editor, model, index):
         model.update_segment_text(index.row(), editor.toPlainText())
+
 
 class TranscriptWidget(QListView):
     def __init__(self, parent=None):

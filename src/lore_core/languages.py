@@ -16,6 +16,7 @@ DEFAULT_LANGUAGES = {
     # We will add others dynamically or from pre-validation
 }
 
+
 def get_supported_languages():
     """
     Returns a dict of NLLB FLORES-200 codes mapping to Name and Quality Tier.

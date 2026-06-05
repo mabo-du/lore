@@ -1,14 +1,22 @@
 from PyQt6.QtWidgets import (
-    QWidget, QFormLayout, QLineEdit, QComboBox, 
-    QTextEdit, QVBoxLayout, QLabel, QScrollArea, QPushButton
+    QWidget,
+    QFormLayout,
+    QLineEdit,
+    QComboBox,
+    QTextEdit,
+    QVBoxLayout,
+    QScrollArea,
+    QPushButton,
 )
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import pyqtSignal
+
 
 class MetadataWidget(QWidget):
     """
     Form for editing OHMS XML metadata.
     """
-    export_requested = pyqtSignal(dict) # Emits the collected metadata dictionary
+
+    export_requested = pyqtSignal(dict)  # Emits the collected metadata dictionary
     bagit_export_requested = pyqtSignal(dict)
     generate_abstract_requested = pyqtSignal()
 
@@ -44,11 +52,11 @@ class MetadataWidget(QWidget):
         """)
 
         layout = QVBoxLayout(self)
-        
+
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QScrollArea.Shape.NoFrame)
-        
+
         container = QWidget()
         form = QFormLayout(container)
         form.setSpacing(10)
@@ -62,13 +70,17 @@ class MetadataWidget(QWidget):
             "format": QComboBox(),
             "media_url": QLineEdit(),
             "rights": QComboBox(),
-            "abstract": QTextEdit()
+            "abstract": QTextEdit(),
         }
         self.fields["abstract"].setMinimumHeight(100)
 
         # Populate combo boxes
-        self.fields["format"].addItems(["audio/mp3", "audio/wav", "audio/m4a", "audio/ogg", "audio/flac"])
-        self.fields["rights"].addItems(["CC-BY", "Copyrighted", "Public Domain", "Other"])
+        self.fields["format"].addItems(
+            ["audio/mp3", "audio/wav", "audio/m4a", "audio/ogg", "audio/flac"]
+        )
+        self.fields["rights"].addItems(
+            ["CC-BY", "Copyrighted", "Public Domain", "Other"]
+        )
 
         form.addRow("Interview Title:", self.fields["title"])
         form.addRow("Repository Name:", self.fields["repository"])
@@ -90,7 +102,7 @@ class MetadataWidget(QWidget):
         self.export_btn = QPushButton("Export OHMS XML")
         self.export_btn.clicked.connect(self._on_export)
         layout.addWidget(self.export_btn)
-        
+
         self.bagit_btn = QPushButton("📦 Export BagIt Package")
         self.bagit_btn.setStyleSheet("background-color: #2e7d32;")
         self.bagit_btn.clicked.connect(self._on_bagit_export)
@@ -105,7 +117,7 @@ class MetadataWidget(QWidget):
             "format": self.fields["format"].currentText(),
             "media_url": self.fields["media_url"].text().strip(),
             "rights": self.fields["rights"].currentText(),
-            "abstract": self.fields["abstract"].toPlainText().strip()
+            "abstract": self.fields["abstract"].toPlainText().strip(),
         }
 
     def _on_export(self):
