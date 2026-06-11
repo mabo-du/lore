@@ -20,13 +20,6 @@ classifiers = [
     "Topic :: Multimedia :: Sound/Audio :: Speech",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-
-[project.urls]
-Homepage = "https://github.com/mabo-du/lore"
-Documentation = "https://github.com/mabo-du/lore/blob/main/USER_GUIDE.md"
-Repository = "https://github.com/mabo-du/lore.git"
-"Issue Tracker" = "https://github.com/mabo-du/lore/issues"
-
 dependencies = [
     "faster-whisper",
     "PyQt6",
@@ -44,18 +37,24 @@ dependencies = [
     "cryptography>=42.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/mabo-du/lore"
+Documentation = "https://github.com/mabo-du/lore/blob/main/USER_GUIDE.md"
+Repository = "https://github.com/mabo-du/lore.git"
+"Issue Tracker" = "https://github.com/mabo-du/lore/issues"
+
 [project.optional-dependencies]
 diarization = [
     "pyannote-audio",
-    "Resemblyzer"
+    "Resemblyzer",
 ]
+
+[project.scripts]
+lore = "src.main:main"
 
 [build-system]
 requires = ["setuptools>=61.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
-
-[project.scripts]
-lore = "src.main:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
