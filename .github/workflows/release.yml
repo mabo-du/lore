@@ -21,10 +21,14 @@ jobs:
         run: |
           pip install build
           python -m build
+      - name: Stage wheels
+        run: |
+          mkdir -p wheels
+          cp dist/*.whl dist/*.tar.gz wheels/
       - uses: actions/upload-artifact@v4
         with:
-          name: python-wheel
-          path: dist/
+          name: python-wheels
+          path: wheels/
 
   publish-pypi:
     needs: build-wheel
@@ -34,7 +38,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: python-wheel
+          name: python-wheels
           path: dist/
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -129,11 +133,23 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/download-artifact@v4
+      - name: Download wheels
+        uses: actions/download-artifact@v4
         with:
-          pattern: '*'
-          merge-multiple: true
-          path: dist/
+          name: python-wheels
+          path: release/
+
+      - name: Download desktop artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: lore-*
+          path: release/
+        continue-on-error: true
+
+      - name: List release assets
+        run: |
+          echo "Assets to upload:"
+          find release/ -type f -exec ls -lh {} \;
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -141,8 +157,5 @@ jobs:
           name: "Lore ${{ github.ref_name }}"
           generate_release_notes: true
           files: |
-            dist/*.whl
-            dist/*.tar.gz
-            dist/lore-*
-            dist/*.zip
+            release/
           fail_on_unmatched_files: false
