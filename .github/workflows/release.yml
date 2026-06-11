@@ -80,6 +80,7 @@ jobs:
           pip install -e .
 
       - name: Remove typing backport
+        shell: bash
         run: pip uninstall -y typing 2>/dev/null || true
 
       - name: Build with PyInstaller
