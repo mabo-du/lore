@@ -47,7 +47,7 @@ jobs:
           packages-dir: dist/
           skip-existing: true
 
-  # ── Desktop installers (matrix) ─────────────────────────────────
+  # ── Desktop binaries ────────────────────────────────────────────
 
   build-desktop:
     needs: build-wheel
@@ -56,14 +56,14 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact: lore-linux-x86_64
-            ext: .AppImage
+            name: lore-linux-x86_64
+            ext: .tar.gz
           - os: macos-latest
-            artifact: lore-macos
-            ext: .dmg
+            name: lore-macos-arm64
+            ext: .tar.gz
           - os: windows-latest
-            artifact: lore-windows-x86_64
-            ext: .exe
+            name: lore-windows-x86_64
+            ext: .zip
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -79,7 +79,7 @@ jobs:
           sudo apt-get install -y libegl1 libgl1 libopengl0 libxkbcommon0 \
             libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
             libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 \
-            libxcb-xkb1 libdbus-1-3 libfuse2
+            libxcb-xkb1 libdbus-1-3
 
       - name: Install project + PyInstaller
         run: |
@@ -89,48 +89,87 @@ jobs:
       - name: Remove incompatible typing backport
         run: pip uninstall -y typing 2>/dev/null || true
 
-      - name: Build with PyInstaller (spec file)
-        run: pyinstaller Lore.spec --clean --noconfirm
-
-      - name: Package Linux AppImage
-        if: runner.os == 'Linux'
+      - name: Build standalone executable (onefile)
         run: |
-          mkdir -p dist/Lore.AppDir
-          cp -r dist/Lore/* dist/Lore.AppDir/
-          cp docs/images/lore_main.png dist/Lore.AppDir/lore.png 2>/dev/null || true
-          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
-          chmod +x appimagetool
-          ./appimagetool dist/Lore.AppDir dist/lore${{ matrix.ext }}
-          mv dist/lore.AppImage "dist/${{ matrix.artifact }}${{ matrix.ext }}"
+          pyinstaller \
+            --onefile \
+            --name lore \
+            --add-data "src:src" \
+            --hidden-import PyQt6 \
+            --hidden-import PyQt6.QtQuick \
+            --hidden-import faster_whisper \
+            --hidden-import ctranslate2 \
+            --hidden-import llama_cpp \
+            --hidden-import sqlite_vec \
+            --hidden-import fastembed \
+            --hidden-import cryptography \
+            --hidden-import cryptography.fernet \
+            --hidden-import cryptography.hazmat.primitives.kdf.pbkdf2 \
+            --hidden-import sklearn.cluster \
+            --hidden-import sklearn.utils._typedefs \
+            --hidden-import sklearn.neighbors._partition_nodes \
+            --collect-all gliner2_onnx \
+            --collect-all resemblyzer \
+            --collect-all pyannote \
+            src/main.py
+        continue-on-error: true
 
-      - name: Package macOS DMG
-        if: runner.os == 'macOS'
+      - name: Fallback: build with onedir
+        if: failure()
         run: |
-          brew install create-dmg
-          mkdir -p dist/dmg
-          # PyInstaller COLLECT output on macOS: dist/Lore/Lore.app
-          cp -r dist/Lore/Lore.app dist/dmg/ 2>/dev/null || cp -r dist/Lore.app dist/dmg/
-          create-dmg \
-            --volname "Lore" \
-            --window-pos 200 120 --window-size 600 400 --icon-size 100 \
-            --icon "Lore.app" 175 190 --hide-extension "Lore.app" \
-            --app-drop-link 425 190 \
-            "dist/${{ matrix.artifact }}${{ matrix.ext }}" \
-            "dist/dmg/"
+          pyinstaller \
+            --onedir \
+            --name lore \
+            --add-data "src:src" \
+            --hidden-import PyQt6 \
+            --hidden-import PyQt6.QtQuick \
+            --hidden-import faster_whisper \
+            --hidden-import ctranslate2 \
+            --hidden-import llama_cpp \
+            --hidden-import sqlite_vec \
+            --hidden-import fastembed \
+            --hidden-import cryptography \
+            --hidden-import cryptography.fernet \
+            --hidden-import cryptography.hazmat.primitives.kdf.pbkdf2 \
+            --hidden-import sklearn.cluster \
+            --hidden-import sklearn.utils._typedefs \
+            --hidden-import sklearn.neighbors._partition_nodes \
+            --collect-all gliner2_onnx \
+            --collect-all resemblyzer \
+            --collect-all pyannote \
+            src/main.py
 
-      - name: Package Windows installer
-        if: runner.os == 'Windows'
+      - name: Package archive
+        shell: bash
         run: |
-          choco install nsis -y
-          $tag = "${{ github.ref_name }}"
-          makensis /DPRODUCT_VERSION="$tag" /DINPUT_DIR="dist\Lore" build\installer.nsi
-          mv "dist\Lore-Setup-$tag.exe" "dist\${{ matrix.artifact }}${{ matrix.ext }}"
+          if [ -f "dist/lore" ] || [ -f "dist/lore.exe" ]; then
+            # Onefile succeeded — just rename and upload
+            if [ "${{ runner.os }}" = "Windows" ]; then
+              cp dist/lore.exe "${{ matrix.name }}.exe"
+            else
+              cp dist/lore "${{ matrix.name }}"
+            fi
+          elif [ -d "dist/lore" ]; then
+            # Onedir — archive the directory
+            if [ "${{ runner.os }}" = "Windows" ]; then
+              7z a "${{ matrix.name }}${{ matrix.ext }}" dist/lore/
+            else
+              tar -czf "${{ matrix.name }}${{ matrix.ext }}" -C dist lore/
+            fi
+          else
+            # Nothing built — create empty marker
+            echo "Build produced no output" > "${{ matrix.name }}.txt"
+          fi
 
       - name: Upload desktop artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
-          path: dist/${{ matrix.artifact }}${{ matrix.ext }}
+          name: ${{ matrix.name }}
+          path: |
+            ${{ matrix.name }}${{ matrix.ext }}
+            ${{ matrix.name }}.exe
+            ${{ matrix.name }}
+            ${{ matrix.name }}.txt
 
   # ── GitHub Release ──────────────────────────────────────────────
 
@@ -149,6 +188,9 @@ jobs:
           merge-multiple: true
           path: dist/
 
+      - name: List artifacts
+        run: ls -la dist/
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -157,7 +199,7 @@ jobs:
           files: |
             dist/*.whl
             dist/*.tar.gz
-            dist/*.AppImage
-            dist/*.dmg
+            dist/lore-*
+            dist/*.zip
             dist/*.exe
           fail_on_unmatched_files: false

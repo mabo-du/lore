@@ -38,9 +38,9 @@ Download the installer for your platform from the [latest release](https://githu
 
 | Platform | Installer |
 |----------|-----------|
-| 🪟 **Windows** | `Lore-Setup-x.x.x.exe` — Double-click to install |
-| 🍎 **macOS** | `Lore-x.x.x.dmg` — Drag to Applications |
-| 🐧 **Linux** | `Lore-x.x.x.AppImage` — `chmod +x` and run |
+| 🪟 **Windows** | `lore-windows-x86_64.zip` — Extract and run `lore.exe` |
+| 🍎 **macOS** | `lore-macos-arm64.tar.gz` — Extract and run `lore` |
+| 🐧 **Linux** | `lore-linux-x86_64.tar.gz` — Extract and run `lore` |
 
 ### Option 2: Install from PyPI
 

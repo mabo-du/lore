@@ -22,9 +22,9 @@ The easiest way to install Lore is via the pre-built installers available on the
 
 | Platform | File | Instructions |
 |----------|------|--------------|
-| **Windows** | `Lore-Setup-x.x.x.exe` | Run the installer. Lore will be available from the Start Menu. |
-| **macOS** | `Lore-x.x.x.dmg` | Open the disk image and drag Lore to your Applications folder. |
-| **Linux** | `Lore-x.x.x.AppImage` | Make executable (`chmod +x Lore-*.AppImage`) then double-click or run from terminal. |
+| **Windows** | `lore-windows-x86_64.zip` | Extract the zip and run `lore.exe`. |
+| **macOS** | `lore-macos-arm64.tar.gz` | Extract and run `./lore` from Terminal. |
+| **Linux** | `lore-linux-x86_64.tar.gz` | Extract and run `./lore`. |
 
 ### PyPI
 
