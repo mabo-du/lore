@@ -28,7 +28,7 @@ dependencies = [
     "lxml",
     "numpy",
     "tsdownsample",
-    "pyannote-audio==3.3.2",
+    "pyannote-audio==4.0.4",
     "resemblyzer>=0.1.4",
     "gliner2-onnx>=0.1.1",
     "llama-cpp-python>=0.3.25",
