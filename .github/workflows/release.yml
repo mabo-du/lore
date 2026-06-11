@@ -84,6 +84,7 @@ jobs:
         run: pip uninstall -y typing 2>/dev/null || true
 
       - name: Build with PyInstaller
+        shell: bash
         run: |
           pyinstaller \
             --onedir \
