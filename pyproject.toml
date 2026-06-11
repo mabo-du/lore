@@ -1,9 +1,32 @@
 [project]
-name = "lore"
-version = "0.1.1"
+name = "lore-oral-history"
+version = "0.1.2"
 description = "Privacy-first, local-only oral history transcription."
 readme = "README.md"
 requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [
+    { name = "Digital Heritage Lab" }
+]
+keywords = ["oral-history", "transcription", "whisper", "archival", "offline"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Homepage = "https://github.com/mabo-du/lore"
+Documentation = "https://github.com/mabo-du/lore/blob/main/USER_GUIDE.md"
+Repository = "https://github.com/mabo-du/lore.git"
+"Issue Tracker" = "https://github.com/mabo-du/lore/issues"
+
 dependencies = [
     "faster-whisper",
     "PyQt6",
@@ -18,6 +41,7 @@ dependencies = [
     "llama-cpp-python>=0.3.25",
     "sqlite-vec>=0.1.9",
     "fastembed>=0.8.0",
+    "cryptography>=42.0",
 ]
 
 [project.optional-dependencies]

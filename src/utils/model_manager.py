@@ -39,7 +39,7 @@ class ModelManager:
         """
         Returns the cache directory for NER models, specific to Lore.
         """
-        base = Path(platformdirs.user_data_dir(appname="LoreProject", appauthor="Lore"))
+        base = Path(platformdirs.user_data_dir(appname="heritage-tools", appauthor=False))
         models_dir = base / "models" / "ner"
         models_dir.mkdir(parents=True, exist_ok=True)
         return models_dir
@@ -54,7 +54,6 @@ class ModelManager:
         if quality_tier in ["NER", "LLM", "Translation"]:
             cache_dir = cls.get_ner_cache_dir()  # Lore-specific models
         else:
-            cache_dir = cls.get_cache_dir()
             cache_dir = cls.get_cache_dir()
 
         # snapshot_download will only download missing/updated files

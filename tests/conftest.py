@@ -21,7 +21,20 @@ class MockTextEmbedding:
         pass
 
     def embed(self, texts, **kwargs):
-        return [np.zeros(384, dtype=np.float32) for _ in texts]
+        # Use hash-based pseudo-embeddings so distance-based semantic
+        # search tests produce meaningful (non-identical) rankings.
+        import hashlib
+
+        results = []
+        for text in texts:
+            h = hashlib.sha256(text.encode()).digest()
+            # Map first 384 bytes of hash to float32 in [-1, 1]
+            vec = np.frombuffer(h[: 384 * 4], dtype=np.float32).copy()
+            vec = vec / np.max(np.abs(vec)) if np.max(np.abs(vec)) > 0 else vec
+            if len(vec) < 384:
+                vec = np.pad(vec, (0, 384 - len(vec)))
+            results.append(vec[:384].astype(np.float32))
+        return results
 
 
 sys.modules["fastembed"] = MagicMock()

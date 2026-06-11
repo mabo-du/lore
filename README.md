@@ -3,9 +3,11 @@
   <img src="https://img.shields.io/badge/Python-3.12+-blue.svg?style=for-the-badge&logo=python" alt="Python 3.12+">
   <img src="https://img.shields.io/badge/PyQt6-UI-blueviolet.svg?style=for-the-badge" alt="PyQt6">
   <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="MIT License">
-  
+  <img src="https://img.shields.io/github/actions/workflow/status/mabo-du/lore/ci.yml?branch=main&style=for-the-badge" alt="CI">
+  <img src="https://img.shields.io/pypi/v/lore-oral-history.svg?style=for-the-badge" alt="PyPI">
+
   <h1>Lore 🎙️</h1>
-  
+
   <p><strong>Privacy-First, Local-Only Oral History Transcription & Archiving</strong></p>
 </div>
 
@@ -14,6 +16,8 @@
 **Lore** is a desktop application designed for historians, archivists, and researchers. It provides state-of-the-art AI transcription, speaker diarization, named entity recognition, and translation—**100% offline, on your own hardware.**
 
 No data leaves your computer. No cloud subscriptions. Just powerful, open-source AI packaged into a clean, intuitive PyQt6 interface.
+
+<img src="https://raw.githubusercontent.com/mabo-du/lore/main/docs/images/lore_main.png" alt="Lore Main Window" width="800">
 
 ## ✨ Features
 
@@ -28,15 +32,34 @@ No data leaves your computer. No cloud subscriptions. Just powerful, open-source
 
 ## 🚀 Installation
 
+### Option 1: Pre-built Installers (Recommended)
+
+Download the installer for your platform from the [latest release](https://github.com/mabo-du/lore/releases/latest):
+
+| Platform | Installer |
+|----------|-----------|
+| 🪟 **Windows** | `Lore-Setup-x.x.x.exe` — Double-click to install |
+| 🍎 **macOS** | `Lore-x.x.x.dmg` — Drag to Applications |
+| 🐧 **Linux** | `Lore-x.x.x.AppImage` — `chmod +x` and run |
+
+### Option 2: Install from PyPI
+
+```bash
+pip install lore-oral-history
+lore
+```
+
+### Option 3: Install from Source
+
 Lore requires **Python 3.12+** and is cross-platform (Windows, macOS, Linux).
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/lore.git
+   git clone https://github.com/mabo-du/lore.git
    cd lore
    ```
 
-2. **Set up a virtual environment (recommended with `uv` or `venv`):**
+2. **Set up a virtual environment:**
    ```bash
    python -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
@@ -49,22 +72,30 @@ Lore requires **Python 3.12+** and is cross-platform (Windows, macOS, Linux).
 
 ## 🎮 Usage
 
-Start the Lore application from your terminal:
+Start the Lore application:
 
 ```bash
 lore
 ```
 
-1. **Select an Audio File:** Click "Browse" to select any standard audio format (WAV, MP3, M4A).
-2. **Configure Settings:** Click the ⚙️ Settings icon to set your Custom Vocabulary.
-3. **Transcribe & Diarize:** Click "Transcribe" on the toolbar. If you want speaker labels, check the "Diarize" box.
+Or launch from your system's application menu if installed via the pre-built installer.
+
+1. **Select an Audio File:** Click "Browse" to select any standard audio format (WAV, MP3, M4A, OGG, FLAC).
+2. **Configure Settings:** Click the ⚙️ Settings icon to set your Custom Vocabulary and speaker diarization preferences.
+
+   <img src="https://raw.githubusercontent.com/mabo-du/lore/main/docs/images/lore_settings.png" alt="Lore Settings" width="400">
+
+3. **Transcribe & Diarize:** Click "Transcribe" on the toolbar. If recording has multiple speakers, check the "Enable Speaker Diarization" box.
 4. **Edit & Review:** Play the audio, click on segments to edit them, and review any low-confidence words highlighted in red.
-5. **Export:** Open the Metadata panel, fill out the project details, and export to **OHMS XML** or an Archival **BagIt Package**.
+5. **Translate:** Select a target language from the dropdown and click "Translate" for fully offline translation.
+6. **Export:** Fill out the Metadata panel and export to **OHMS XML** or an Archival **BagIt Package**.
+
+For detailed instructions, see the [User Guide](USER_GUIDE.md).
 
 ## 🏗️ Architecture
 
-Lore is designed with strict sequential memory management to run on older hardware. 
-- Models are loaded into memory one at a time (e.g., Whisper loads, transcribes, unloads -> NLLB loads, translates, unloads).
+Lore is designed with strict sequential memory management to run on older hardware.
+- Models are loaded into memory one at a time (e.g., Whisper loads, transcribes, unloads → NLLB loads, translates, unloads).
 - Heavy use of CTranslate2 (INT8 quantization) ensures models run blazingly fast without needing a dedicated GPU.
 - The UI runs asynchronously using PyQt6's `QThread` and Signals, keeping the interface completely responsive during heavy AI workloads.
 

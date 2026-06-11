@@ -7,30 +7,30 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
-  # ── Build Python wheel ──────────────────────────────────────────────────
+  # ── Build Python wheel ──────────────────────────────────────────
+
   build-wheel:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
       - name: Build distribution
         run: |
           pip install build
           python -m build
-
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-wheel
           path: dist/
 
-  # ── Publish to PyPI ─────────────────────────────────────────────────────
+  # ── Publish to PyPI ─────────────────────────────────────────────
+
   publish-pypi:
     needs: build-wheel
     runs-on: ubuntu-latest
@@ -41,14 +41,14 @@ jobs:
         with:
           name: python-wheel
           path: dist/
-
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
           skip-existing: true
 
-  # ── Standalone desktop binaries ─────────────────────────────────────────
+  # ── Desktop installers (matrix) ─────────────────────────────────
+
   build-desktop:
     needs: build-wheel
     strategy:
@@ -56,17 +56,18 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            name: lore-linux-x64
+            artifact: lore-linux-x86_64
+            ext: .AppImage
           - os: macos-latest
-            name: lore-macos-arm64
+            artifact: lore-macos
+            ext: .dmg
           - os: windows-latest
-            name: lore-windows-x64
+            artifact: lore-windows-x86_64
             ext: .exe
 
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -75,31 +76,60 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libegl1 libgl1 libopengl0 libxkbcommon-x11-0
+          sudo apt-get install -y libegl1 libgl1 libopengl0 libxkbcommon0 \
+            libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+            libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 \
+            libxcb-xkb1 libdbus-1-3
 
       - name: Install project + PyInstaller
         run: |
           pip install pyinstaller
           pip install -e .
 
-      - name: Build standalone executable
+      - name: Build with PyInstaller (spec file)
+        run: pyinstaller Lore.spec --clean --noconfirm
+
+      - name: Package Linux AppImage
+        if: runner.os == 'Linux'
         run: |
-          pyinstaller --onefile --name lore src/main.py \
-            --hidden-import PyQt6 \
-            --hidden-import faster_whisper \
-            --hidden-import llama_cpp \
-            --hidden-import sqlite_vec \
-            --hidden-import fastembed \
-            --collect-all resemblyzer \
-            --collect-all gliner2_onnx
+          mkdir -p dist/Lore.AppDir
+          cp -r dist/Lore/* dist/Lore.AppDir/
+          cp docs/images/lore_main.png dist/Lore.AppDir/lore.png 2>/dev/null || true
+          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
+          chmod +x appimagetool
+          ./appimagetool dist/Lore.AppDir dist/lore${{ matrix.ext }}
+          mv dist/lore.AppImage "dist/${{ matrix.artifact }}${{ matrix.ext }}"
+
+      - name: Package macOS DMG
+        if: runner.os == 'macOS'
+        run: |
+          brew install create-dmg
+          mkdir -p dist/dmg
+          cp -r dist/Lore.app dist/dmg/
+          create-dmg \
+            --volname "Lore" \
+            --window-pos 200 120 --window-size 600 400 --icon-size 100 \
+            --icon "Lore.app" 175 190 --hide-extension "Lore.app" \
+            --app-drop-link 425 190 \
+            "dist/${{ matrix.artifact }}${{ matrix.ext }}" \
+            "dist/dmg/"
+
+      - name: Package Windows installer
+        if: runner.os == 'Windows'
+        run: |
+          choco install nsis -y
+          $tag = "${{ github.ref_name }}"
+          makensis /DPRODUCT_VERSION="$tag" /DINPUT_DIR="dist\Lore" build\installer.nsi
+          mv "dist\Lore-Setup-$tag.exe" "dist\${{ matrix.artifact }}${{ matrix.ext }}"
 
       - name: Upload desktop artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}
-          path: dist/lore${{ matrix.ext }}
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}${{ matrix.ext }}
 
-  # ── GitHub Release ─────────────────────────────────────────────────────
+  # ── GitHub Release ──────────────────────────────────────────────
+
   create-release:
     needs: [build-wheel, build-desktop]
     if: always()
@@ -123,6 +153,7 @@ jobs:
           files: |
             dist/*.whl
             dist/*.tar.gz
-            dist/lore
-            dist/lore.exe
+            dist/*.AppImage
+            dist/*.dmg
+            dist/*.exe
           fail_on_unmatched_files: false

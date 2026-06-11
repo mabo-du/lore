@@ -30,6 +30,7 @@ from models.transcript_model import TranscriptListModel
 from lore_core.ohms_exporter import OhmsExporter
 from ui.settings_dialog import SettingsDialog
 from PyQt6.QtCore import QSettings
+from utils.token_vault import decrypt_token
 
 
 class MainWindow(QMainWindow):
@@ -158,6 +159,7 @@ class MainWindow(QMainWindow):
         # Connect audio player signals
         self.audio_player.position_changed.connect(self._on_position_changed)
         self.audio_player.duration_changed.connect(self._on_duration_changed)
+        self.audio_player.state_changed.connect(self._on_player_state_changed)
 
     def open_settings(self):
         dlg = SettingsDialog(self)
@@ -175,7 +177,7 @@ class MainWindow(QMainWindow):
 
         settings = QSettings("HeritageTools", "Lore")
         use_pyannote = settings.value("diarization/use_pyannote", False, type=bool)
-        hf_token = settings.value("diarization/hf_token", "")
+        hf_token = decrypt_token(settings.value("diarization/hf_token", ""))
 
         enable_diarization = self.chk_diarize.isChecked()
 
@@ -276,7 +278,7 @@ class MainWindow(QMainWindow):
             settings = QSettings("HeritageTools", "Lore")
             enable_diarization = settings.value("diarization/enabled", False, type=bool)
             use_pyannote = settings.value("diarization/use_pyannote", False, type=bool)
-            hf_token = settings.value("diarization/hf_token", "")
+            hf_token = decrypt_token(settings.value("diarization/hf_token", ""))
             custom_vocab = settings.value("transcription/custom_vocab", "")
 
             self.transcript_model.clear_segments()
@@ -332,18 +334,22 @@ class MainWindow(QMainWindow):
     def _on_transcription_error(self, err_msg: str):
         self.status_label.setText(f"Transcription Error:\n{err_msg}")
 
-    def _toggle_playback(self):
-        # Simple toggle based on state would be better,
-        # but for now just check if we want to play/pause
-        # QMediaPlayer doesn't have an easily accessible isPlaying without state checking,
-        # but we can track it.
-        # Let's just track it loosely.
-        if self.play_btn.text() == "Play":
-            self.audio_player.play()
+    def _on_player_state_changed(self, state):
+        """Update play button when playback state changes (e.g., reaches end)."""
+        from PyQt6.QtMultimedia import QMediaPlayer
+
+        if state == QMediaPlayer.PlaybackState.PlayingState:
             self.play_btn.setText("Pause")
         else:
-            self.audio_player.pause()
             self.play_btn.setText("Play")
+
+    def _toggle_playback(self):
+        from PyQt6.QtMultimedia import QMediaPlayer
+
+        if self.audio_player._player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+            self.audio_player.pause()
+        else:
+            self.audio_player.play()
 
     def _on_position_changed(self, ms: int):
         self.waveform.set_position(ms)

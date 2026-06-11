@@ -77,6 +77,9 @@ class GlobalSearchIndex:
 
             cursor = db.cursor()
 
+            # Wrap re-index in explicit transaction for atomicity
+            db.execute("BEGIN IMMEDIATE")
+
             # Delete old entries for this project to avoid duplicates if re-indexed
             cursor.execute(
                 "DELETE FROM segments_fts WHERE project_id = ?", (project_id,)

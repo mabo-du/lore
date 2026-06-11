@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QMessageBox,
 )
 from PyQt6.QtCore import QSettings
+from utils.token_vault import encrypt_token, decrypt_token
 
 
 class SettingsDialog(QDialog):
@@ -106,7 +107,7 @@ class SettingsDialog(QDialog):
             self.radio_resemblyzer.setChecked(True)
 
         token = self.settings.value("diarization/hf_token", "")
-        self.token_input.setText(token)
+        self.token_input.setText(decrypt_token(token))
 
         vocab = self.settings.value("transcription/custom_vocab", "")
         self.vocab_input.setText(vocab)
@@ -123,7 +124,10 @@ class SettingsDialog(QDialog):
         self.settings.setValue(
             "diarization/use_pyannote", self.radio_pyannote.isChecked()
         )
-        self.settings.setValue("diarization/hf_token", self.token_input.text().strip())
+        self.settings.setValue(
+            "diarization/hf_token",
+            encrypt_token(self.token_input.text().strip()),
+        )
         self.settings.setValue(
             "transcription/custom_vocab", self.vocab_input.text().strip()
         )

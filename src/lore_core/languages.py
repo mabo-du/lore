@@ -22,7 +22,7 @@ def get_supported_languages():
     Returns a dict of NLLB FLORES-200 codes mapping to Name and Quality Tier.
     Loads from a pre-validated JSON file if it exists, otherwise uses defaults.
     """
-    config_path = Path(user_data_dir("lore", "lore_app")) / "language_tiers.json"
+    config_path = Path(user_data_dir(appname="heritage-tools", appauthor=False)) / "language_tiers.json"
     if config_path.exists():
         try:
             with open(config_path, "r", encoding="utf-8") as f:

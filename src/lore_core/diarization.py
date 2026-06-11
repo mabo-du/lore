@@ -70,13 +70,17 @@ class DiarizationEngine:
         clusterer = KMeans(n_clusters=2, n_init=10, random_state=42)
         labels = clusterer.fit_predict(cont_embeds)
 
+        # Guard against length mismatch between embeddings and wav_splits
+        if len(cont_embeds) != len(wav_splits):
+            return [(0.0, len(wav) / 16000.0, "SPEAKER_00")]
+
         results = []
         # Reconstruct timestamps based on wav_splits which are in samples
         sample_rate = 16000
-        for i, split in enumerate(wav_splits):
+        for (split, label) in zip(wav_splits, labels):
             start_s = split.start / sample_rate
             end_s = split.stop / sample_rate
-            speaker = f"SPEAKER_{labels[i]:02d}"
+            speaker = f"SPEAKER_{label:02d}"
 
             # Merge contiguous segments with same speaker
             if (
