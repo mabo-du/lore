@@ -1,5 +1,5 @@
 [project]
-name = "lore-oral-history"
+name = "lore-ai"
 version = "0.1.2"
 description = "Privacy-first, local-only oral history transcription."
 readme = "README.md"

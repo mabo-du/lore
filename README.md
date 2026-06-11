@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/PyQt6-UI-blueviolet.svg?style=for-the-badge" alt="PyQt6">
   <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="MIT License">
   <img src="https://img.shields.io/github/actions/workflow/status/mabo-du/lore/ci.yml?branch=main&style=for-the-badge" alt="CI">
-  <img src="https://img.shields.io/pypi/v/lore-oral-history.svg?style=for-the-badge" alt="PyPI">
+  <img src="https://img.shields.io/pypi/v/lore-ai.svg?style=for-the-badge" alt="PyPI">
 
   <h1>Lore 🎙️</h1>
 
@@ -45,7 +45,7 @@ Download the installer for your platform from the [latest release](https://githu
 ### Option 2: Install from PyPI
 
 ```bash
-pip install lore-oral-history
+pip install lore-ai
 lore
 ```
 

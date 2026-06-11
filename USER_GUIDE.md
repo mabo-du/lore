@@ -29,7 +29,7 @@ The easiest way to install Lore is via the pre-built installers available on the
 ### PyPI
 
 ```bash
-pip install lore-oral-history
+pip install lore-ai
 lore
 ```
 
