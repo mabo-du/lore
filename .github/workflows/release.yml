@@ -86,6 +86,9 @@ jobs:
           pip install pyinstaller
           pip install -e .
 
+      - name: Remove incompatible typing backport
+        run: pip uninstall -y typing 2>/dev/null || true
+
       - name: Build with PyInstaller (spec file)
         run: pyinstaller Lore.spec --clean --noconfirm
 
