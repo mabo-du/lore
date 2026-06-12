@@ -139,10 +139,12 @@ jobs:
           name: python-wheels
           path: release/
 
-      - name: Download desktop artifacts (skip Linux if too large)
+      - name: Download desktop artifacts (macOS + Windows only, Linux >2GB)
         uses: actions/download-artifact@v4
         with:
-          pattern: lore-macos-*,lore-windows-*
+          pattern: |
+            lore-macos-*
+            lore-windows-*
           path: release/
         continue-on-error: true
 
@@ -157,5 +159,5 @@ jobs:
           name: "Lore ${{ github.ref_name }}"
           generate_release_notes: true
           files: |
-            release/
+            release/**
           fail_on_unmatched_files: false
