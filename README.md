@@ -40,7 +40,7 @@ Download the installer for your platform from the [latest release](https://githu
 |----------|-----------|
 | 🪟 **Windows** | `lore-windows-x86_64.zip` — Extract and run `lore.exe` |
 | 🍎 **macOS** | `lore-macos-arm64.tar.gz` — Extract and run `lore` |
-| 🐧 **Linux** | `lore-linux-x86_64.tar.gz` — Extract and run `lore` |
+| 🐧 **Linux** | Install via PyPI (`pip install lore-ai`) or [build from source](#option-3-install-from-source) |
 
 ### Option 2: Install from PyPI
 

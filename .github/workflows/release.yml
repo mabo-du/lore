@@ -139,10 +139,10 @@ jobs:
           name: python-wheels
           path: release/
 
-      - name: Download desktop artifacts
+      - name: Download desktop artifacts (skip Linux if too large)
         uses: actions/download-artifact@v4
         with:
-          pattern: lore-*
+          pattern: lore-macos-*,lore-windows-*
           path: release/
         continue-on-error: true
 
