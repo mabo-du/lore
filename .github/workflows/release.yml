@@ -139,12 +139,17 @@ jobs:
           name: python-wheels
           path: release/
 
-      - name: Download desktop artifacts (macOS + Windows only, Linux >2GB)
+      - name: Download macOS binary
         uses: actions/download-artifact@v4
         with:
-          pattern: |
-            lore-macos-*
-            lore-windows-*
+          name: lore-macos-arm64
+          path: release/
+        continue-on-error: true
+
+      - name: Download Windows binary
+        uses: actions/download-artifact@v4
+        with:
+          name: lore-windows-x86_64
           path: release/
         continue-on-error: true
 
