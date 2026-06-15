@@ -1,3 +1,4 @@
+import uuid
 from lxml import etree
 import datetime
 from pathlib import Path
@@ -40,7 +41,7 @@ class OhmsExporter:
         root.set(f"{{{cls.XSI_NS}}}schemaLocation", cls.SCHEMA_LOC)
 
         # Generate IDs/dates
-        record_id = "1"  # Typically CMS specific, hardcode for now
+        record_id = metadata.get("record_id") or str(uuid.uuid4())[:8]
         dt = datetime.datetime.now().strftime("%Y-%m-%d")
 
         record = etree.SubElement(root, f"{{{cls.OHMS_NS}}}record", id=record_id, dt=dt)
@@ -91,27 +92,31 @@ class OhmsExporter:
                 record, f"{{{cls.OHMS_NS}}}include_translation"
             ).text = "true"
 
-        # Collect and deduplicate NER entities from segments
-        entities = set()
+        # Collect NER entities from segments, separated by label type
+        keywords_set = set()
+        subjects_set = set()
         for seg in transcript.segments:
             for ent in seg.entities:
-                entities.add(ent.text)
+                if ent.label in ("person", "organization", "location"):
+                    keywords_set.add(ent.text)
+            for tag in seg.tags:
+                if tag.preferred_term:
+                    subjects_set.add(tag.preferred_term)
 
-        keywords_str = "; ".join(sorted(list(entities)))
+        keywords_str = "; ".join(sorted(keywords_set))
+        subjects_str = "; ".join(sorted(subjects_set))
 
         index_node = etree.SubElement(record, f"{{{cls.OHMS_NS}}}index")
-        if keywords_str:
+        if keywords_str or subjects_str:
             point = etree.SubElement(index_node, f"{{{cls.OHMS_NS}}}point")
             etree.SubElement(point, f"{{{cls.OHMS_NS}}}time").text = "0"
             etree.SubElement(
                 point, f"{{{cls.OHMS_NS}}}title"
             ).text = "Auto-generated Entities"
-            etree.SubElement(point, f"{{{cls.OHMS_NS}}}keywords").text = keywords_str
-
-            subjects_str = "; ".join(
-                sorted(list(entities))
-            )  # Currently using the same for subjects
-            etree.SubElement(point, f"{{{cls.OHMS_NS}}}subjects").text = subjects_str
+            if keywords_str:
+                etree.SubElement(point, f"{{{cls.OHMS_NS}}}keywords").text = keywords_str
+            if subjects_str:
+                etree.SubElement(point, f"{{{cls.OHMS_NS}}}subjects").text = subjects_str
 
         # Generate VTT Transcript
         vtt_transcript = etree.SubElement(record, f"{{{cls.OHMS_NS}}}vtt_transcript")

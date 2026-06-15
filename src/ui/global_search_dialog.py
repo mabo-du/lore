@@ -11,8 +11,32 @@ from PyQt6.QtWidgets import (
     QButtonGroup,
     QWidget,
 )
+from PyQt6.QtCore import QThread, pyqtSignal
 from lore_core.global_search import GlobalSearchIndex
 import datetime
+
+
+class SearchWorker(QThread):
+    """Runs search in a background thread to avoid UI freeze."""
+
+    finished = pyqtSignal(list)  # results list
+    error = pyqtSignal(str)
+
+    def __init__(self, search_index, query: str, use_semantic: bool, parent=None):
+        super().__init__(parent)
+        self.search_index = search_index
+        self.query = query
+        self.use_semantic = use_semantic
+
+    def run(self):
+        try:
+            if self.use_semantic:
+                results = self.search_index.search_semantic(self.query)
+            else:
+                results = self.search_index.search_keyword(self.query)
+            self.finished.emit(results)
+        except Exception as e:
+            self.error.emit(str(e))
 
 
 class GlobalSearchDialog(QDialog):
@@ -54,11 +78,8 @@ class GlobalSearchDialog(QDialog):
             }
         """)
 
-        try:
-            self.search_index = GlobalSearchIndex()
-        except Exception as e:
-            self.search_index = None
-            print(f"Failed to init search index: {e}")
+        # Lazy-loaded: init in perform_search to avoid blocking UI on model load
+        self.search_index = None
 
         layout = QVBoxLayout(self)
 
@@ -99,12 +120,41 @@ class GlobalSearchDialog(QDialog):
         td = datetime.timedelta(seconds=seconds)
         return str(td)
 
-    def perform_search(self):
-        if not self.search_index:
-            self.results_list.clear()
-            self.results_list.addItem("Search engine not available.")
-            return
+    def _populate_results(self, results):
+        """Populate the results list from search results."""
+        if not results:
+            self.results_list.addItem("No results found.")
+        else:
+            for res in results:
+                item = QListWidgetItem()
 
+                time_str = f"[{self._format_time(res['start_ms'])}]"
+                proj_id = res["project_id"]
+                snippet = res["snippet"]
+
+                # Create custom widget for rich text display
+                widget = QWidget()
+                w_layout = QVBoxLayout(widget)
+                w_layout.setContentsMargins(5, 5, 5, 5)
+
+                header = QLabel(
+                    f"<b style='color:#007acc;'>{proj_id}</b> <span style='color:gray;'>{time_str}</span>"
+                )
+                body = QLabel(snippet)
+                body.setWordWrap(True)
+                body.setStyleSheet("color: #dddddd; font-size: 13px;")
+
+                w_layout.addWidget(header)
+                w_layout.addWidget(body)
+
+                item.setSizeHint(widget.sizeHint())
+                self.results_list.addItem(item)
+                self.results_list.setItemWidget(item, widget)
+
+        self.btn_search.setEnabled(True)
+        self.search_input.setEnabled(True)
+
+    def perform_search(self):
         query = self.search_input.text().strip()
         if not query:
             return
@@ -112,46 +162,27 @@ class GlobalSearchDialog(QDialog):
         self.results_list.clear()
         self.btn_search.setEnabled(False)
         self.search_input.setEnabled(False)
+        self.results_list.addItem("Searching...")
 
-        # In a real app this should be threaded so it doesn't freeze the UI,
-        # but for simplicity we run it inline here.
-        try:
-            if self.radio_keyword.isChecked():
-                results = self.search_index.search_keyword(query)
-            else:
-                results = self.search_index.search_semantic(query)
+        # Lazy-load the search index on first search (avoid UI freeze on dialog open)
+        if self.search_index is None:
+            try:
+                self.search_index = GlobalSearchIndex()
+            except Exception as e:
+                self.results_list.clear()
+                self.results_list.addItem(f"Failed to initialise search engine: {e}")
+                self.btn_search.setEnabled(True)
+                self.search_input.setEnabled(True)
+                return
 
-            if not results:
-                self.results_list.addItem("No results found.")
-            else:
-                for res in results:
-                    item = QListWidgetItem()
+        # Run search in background thread to avoid UI freeze during vector inference
+        use_semantic = self.radio_semantic.isChecked()
+        self.search_worker = SearchWorker(self.search_index, query, use_semantic)
+        self.search_worker.finished.connect(self._populate_results)
+        self.search_worker.error.connect(self._on_search_error)
+        self.search_worker.start()
 
-                    time_str = f"[{self._format_time(res['start_ms'])}]"
-                    proj_id = res["project_id"]
-                    snippet = res["snippet"]
-
-                    # Create custom widget for rich text display
-                    widget = QWidget()
-                    w_layout = QVBoxLayout(widget)
-                    w_layout.setContentsMargins(5, 5, 5, 5)
-
-                    header = QLabel(
-                        f"<b style='color:#007acc;'>{proj_id}</b> <span style='color:gray;'>{time_str}</span>"
-                    )
-                    body = QLabel(snippet)
-                    body.setWordWrap(True)
-                    body.setStyleSheet("color: #dddddd; font-size: 13px;")
-
-                    w_layout.addWidget(header)
-                    w_layout.addWidget(body)
-
-                    item.setSizeHint(widget.sizeHint())
-                    self.results_list.addItem(item)
-                    self.results_list.setItemWidget(item, widget)
-
-        except Exception as e:
-            self.results_list.addItem(f"Search failed: {e}")
-        finally:
-            self.btn_search.setEnabled(True)
-            self.search_input.setEnabled(True)
+    def _on_search_error(self, err_msg: str):
+        self.results_list.addItem(f"Search failed: {err_msg}")
+        self.btn_search.setEnabled(True)
+        self.search_input.setEnabled(True)

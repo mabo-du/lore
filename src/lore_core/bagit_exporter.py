@@ -63,10 +63,10 @@ class BagItPackager:
             f.write(f"Bagging-Date: {datetime.now().strftime('%Y-%m-%d')}\n")
             f.write(f"External-Identifier: {project_id}\n")
             # Calculate total payload size and oxum
-            audio_size = bag_audio_path.stat().st_size
-            xml_size = bag_xml_path.stat().st_size
-            total_size = audio_size + xml_size
-            f.write(f"Payload-Oxum: {total_size}.2\n")
+            payload_files = list(data_dir.iterdir())
+            total_size = sum(p.stat().st_size for p in payload_files)
+            file_count = len(payload_files)
+            f.write(f"Payload-Oxum: {total_size}.{file_count}\n")
             f.write(f"Bag-Size: {total_size / (1024 * 1024):.2f} MB\n")
 
         # 5. Create payload manifest (manifest-sha256.txt)

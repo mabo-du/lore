@@ -53,9 +53,11 @@ class TaxonomyManager:
             logger.info("Loading FastEmbed model for taxonomy embedding...")
             cache_dir = Path(user_data_dir("lore", "lore_app")) / "fastembed"
             cache_dir.mkdir(parents=True, exist_ok=True)
-            # Using natively supported multilingual model in FastEmbed (replaces IBM Granite which requires custom ONNX loading)
+            # Using bge-small-en-v1.5 — same model as global_search.py to share
+            # the in-memory embedding model and avoid doubling RAM usage.
+            # Both are 384-dimensional so vectors remain interchangeable.
             self.embedding_model = TextEmbedding(
-                model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+                model_name="BAAI/bge-small-en-v1.5",
                 threads=1,
                 cache_dir=str(cache_dir),
             )

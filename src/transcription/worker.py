@@ -28,6 +28,7 @@ class TranscriptionWorker(QThread):
         use_pyannote: bool = False,
         hf_token: str = None,
         custom_vocab: str = "",
+        num_speakers: int = 2,
         parent=None,
     ):
         super().__init__(parent)
@@ -37,6 +38,7 @@ class TranscriptionWorker(QThread):
         self.use_pyannote = use_pyannote
         self.hf_token = hf_token
         self.custom_vocab = custom_vocab
+        self.num_speakers = num_speakers
 
     def run(self):
         try:
@@ -80,7 +82,8 @@ class TranscriptionWorker(QThread):
                 from lore_core.diarization import DiarizationEngine
 
                 diarizer = DiarizationEngine(
-                    use_pyannote=self.use_pyannote, hf_token=self.hf_token
+                    use_pyannote=self.use_pyannote, hf_token=self.hf_token,
+                    num_speakers=self.num_speakers
                 )
                 d_results = diarizer.run_diarization(self.audio_path)
 

@@ -10,6 +10,8 @@ from PyQt6.QtWidgets import (
     QFormLayout,
     QGroupBox,
     QMessageBox,
+    QComboBox,
+    QSpinBox,
 )
 from PyQt6.QtCore import QSettings
 from utils.token_vault import encrypt_token, decrypt_token
@@ -32,6 +34,11 @@ class SettingsDialog(QDialog):
         self.vocab_input.setPlaceholderText("e.g., Antigravity, O'Connor, NumPy")
         t_form_layout = QFormLayout()
         t_form_layout.addRow("Custom Vocabulary:", self.vocab_input)
+
+        self.model_tier_combo = QComboBox()
+        self.model_tier_combo.addItems(["Fast", "Balanced", "Best Quality"])
+        t_form_layout.addRow("Model Quality Tier:", self.model_tier_combo)
+
         transcription_layout.addLayout(t_form_layout)
         t_desc = QLabel(
             "Comma-separated list of terms (proper nouns, local places) to inject "
@@ -66,6 +73,16 @@ class SettingsDialog(QDialog):
 
         form_layout = QFormLayout()
         form_layout.addRow("HuggingFace Token:", self.token_input)
+
+        self.speaker_count_spin = QSpinBox()
+        self.speaker_count_spin.setRange(1, 20)
+        self.speaker_count_spin.setValue(2)
+        self.speaker_count_spin.setToolTip(
+            "Number of speakers expected (Resemblyzer only).\n"
+            "1 = monologue, 2 = interview, 3+ = panel."
+        )
+        form_layout.addRow("Number of Speakers:", self.speaker_count_spin)
+
         diarization_layout.addLayout(form_layout)
 
         # Description
@@ -112,6 +129,14 @@ class SettingsDialog(QDialog):
         vocab = self.settings.value("transcription/custom_vocab", "")
         self.vocab_input.setText(vocab)
 
+        model_tier = self.settings.value("transcription/model_tier", "Best Quality")
+        idx = self.model_tier_combo.findText(model_tier)
+        if idx >= 0:
+            self.model_tier_combo.setCurrentIndex(idx)
+
+        num_speakers = self.settings.value("diarization/num_speakers", 2, type=int)
+        self.speaker_count_spin.setValue(num_speakers)
+
     def save_settings(self):
         if self.radio_pyannote.isChecked() and not self.token_input.text().strip():
             QMessageBox.warning(
@@ -130,5 +155,11 @@ class SettingsDialog(QDialog):
         )
         self.settings.setValue(
             "transcription/custom_vocab", self.vocab_input.text().strip()
+        )
+        self.settings.setValue(
+            "transcription/model_tier", self.model_tier_combo.currentText()
+        )
+        self.settings.setValue(
+            "diarization/num_speakers", self.speaker_count_spin.value()
         )
         self.accept()

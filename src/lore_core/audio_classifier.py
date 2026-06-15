@@ -21,20 +21,31 @@ class AudioClassifyWorker(QThread):
     def __init__(self, audio_path: Path, parent=None):
         super().__init__(parent)
         self.audio_path = audio_path
-        # We only care about laughter and crying indices
-        self.target_indices = {
-            13: "Laughter",
-            14: "Laughter",
-            17: "Laughter",
-            19: "Crying",
-            20: "Crying",
-        }
+        self.target_indices = {}  # Populated dynamically in run()
         self.threshold = 0.35  # Confidence threshold
 
     def run(self):
         try:
             model_path_str = ModelManager.ensure_model("YAMNet")
-            onnx_file = Path(model_path_str) / "yamnet.onnx"
+            model_dir = Path(model_path_str)
+            onnx_file = model_dir / "yamnet.onnx"
+
+            # Build the target index map dynamically from yamnet_class_map.csv
+            class_map_path = model_dir / "yamnet_class_map.csv"
+            target_labels = {"Laughter", "Baby cry, infant cry"}
+            self.target_indices = {}
+            if class_map_path.exists():
+                import csv
+                with open(class_map_path) as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        label = row.get("display_name", "")
+                        if label in target_labels:
+                            category = "Laughter" if "laugh" in label.lower() else "Crying"
+                            self.target_indices[int(row["index"])] = category
+            else:
+                # Fallback hardcoded indices if class map is unavailable
+                self.target_indices = {13: "Laughter", 14: "Laughter", 17: "Laughter", 19: "Crying", 20: "Crying"}
 
             # CPU only
             session = ort.InferenceSession(

@@ -22,7 +22,8 @@ No data leaves your computer. No cloud subscriptions. Just powerful, open-source
 ## ✨ Features
 
 - 🎧 **Offline Transcription:** Powered by `faster-whisper`, optimized for CPU inference with low memory overhead (< 8GB RAM).
-- 🗣️ **Speaker Diarization:** Automatically identifies and labels different speakers using `pyannote.audio`.
+- 🗣️ **Speaker Diarization:** Automatically identifies and labels different speakers using `pyannote.audio` or `Resemblyzer`, with configurable speaker count (1–20).
+- ⚡ **Model Tier Selection:** Choose between Fast (small), Balanced (medium), or Best Quality (large-v3-turbo) Whisper models in Settings.
 - 🔍 **Word-Level Confidence:** Low-confidence words are visually highlighted so you can quickly spot potential hallucinations.
 - 🌍 **Local Translation:** Translate transcripts to over 200 languages completely offline using Meta's `NLLB-200` model.
 - 📖 **Custom Vocabulary:** Provide local jargon, proper nouns, and historical terms to guide Whisper's decoding graph for maximum accuracy.

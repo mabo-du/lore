@@ -37,15 +37,21 @@ class WaveformWidget(QWidget):
 
     def load_audio(self, wav_path: str):
         """Loads a 16kHz mono WAV file (output from normalise.py)"""
-        with wave.open(wav_path, "rb") as wav:
-            self.sample_rate = wav.getframerate()
-            n_frames = wav.getnframes()
-            self.duration_ms = int((n_frames / self.sample_rate) * 1000)
+        try:
+            with wave.open(wav_path, "rb") as wav:
+                self.sample_rate = wav.getframerate()
+                n_frames = wav.getnframes()
+                self.duration_ms = int((n_frames / self.sample_rate) * 1000)
 
-            # Read all frames and convert to numpy array
-            frames = wav.readframes(n_frames)
-            # Normalised audio is 16-bit PCM
-            self.audio_data = np.frombuffer(frames, dtype=np.int16)
+                # Read all frames and convert to numpy array
+                frames = wav.readframes(n_frames)
+                # Normalised audio is 16-bit PCM
+                self.audio_data = np.frombuffer(frames, dtype=np.int16)
+        except Exception as e:
+            print(f"WaveformWidget: Failed to load audio: {e}")
+            self.audio_data = None
+            self.update()
+            return
 
         self._update_downsampled_data()
         self.update()
@@ -74,8 +80,9 @@ class WaveformWidget(QWidget):
         n_out = min(width * 2, len(self.audio_data))
 
         if n_out > 0:
-            # downsample returns indices
-            indices = downsampler.downsample(self.audio_data, n_out=n_out)
+            # downsample requires x, y, n_out — not just y
+            x = np.arange(len(self.audio_data))
+            indices = downsampler.downsample(x, self.audio_data, n_out=n_out)
             self.downsampled_data = self.audio_data[indices]
         else:
             self.downsampled_data = None

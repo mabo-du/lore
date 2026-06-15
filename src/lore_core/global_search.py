@@ -80,6 +80,16 @@ class GlobalSearchIndex:
             # Wrap re-index in explicit transaction for atomicity
             db.execute("BEGIN IMMEDIATE")
 
+            # Collect old rowids for this project to clean up vector rows
+            cursor.execute(
+                "SELECT rowid FROM segments_meta WHERE project_id = ?", (project_id,)
+            )
+            old_rowids = [row[0] for row in cursor.fetchall()]
+
+            # Delete old vector rows first (vec0 requires rowid-based deletion)
+            for rowid in old_rowids:
+                cursor.execute("DELETE FROM segments_vec WHERE rowid = ?", (rowid,))
+
             # Delete old entries for this project to avoid duplicates if re-indexed
             cursor.execute(
                 "DELETE FROM segments_fts WHERE project_id = ?", (project_id,)
@@ -87,8 +97,6 @@ class GlobalSearchIndex:
             cursor.execute(
                 "DELETE FROM segments_meta WHERE project_id = ?", (project_id,)
             )
-            # Vector tables don't support DELETE by non-rowid directly easily in some setups,
-            # but since we rely on meta, orphaned vectors are just dead space. For now, it's fine.
 
             for seg, emb in zip(
                 [s for s in transcript.segments if s.text.strip()], embeddings

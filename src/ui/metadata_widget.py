@@ -70,6 +70,7 @@ class MetadataWidget(QWidget):
             "format": QComboBox(),
             "media_url": QLineEdit(),
             "rights": QComboBox(),
+            "record_id": QLineEdit(),
             "abstract": QTextEdit(),
         }
         self.fields["abstract"].setMinimumHeight(100)
@@ -78,9 +79,16 @@ class MetadataWidget(QWidget):
         self.fields["format"].addItems(
             ["audio/mp3", "audio/wav", "audio/m4a", "audio/ogg", "audio/flac"]
         )
-        self.fields["rights"].addItems(
-            ["CC-BY", "Copyrighted", "Public Domain", "Other"]
-        )
+        self.fields["rights"].setEditable(True)
+        self.fields["rights"].addItems([
+            "CC BY 4.0",
+            "CC BY-SA 4.0",
+            "CC BY-NC 4.0",
+            "CC BY-NC-SA 4.0",
+            "Public Domain (CC0)",
+            "Copyrighted - All Rights Reserved",
+            "Restricted Access",
+        ])
 
         form.addRow("Interview Title:", self.fields["title"])
         form.addRow("Repository Name:", self.fields["repository"])
@@ -89,6 +97,7 @@ class MetadataWidget(QWidget):
         form.addRow("Media Format:", self.fields["format"])
         form.addRow("Media URL (Online):", self.fields["media_url"])
         form.addRow("Rights/License:", self.fields["rights"])
+        form.addRow("Record ID (CMS Ref):", self.fields["record_id"])
         form.addRow("Abstract:", self.fields["abstract"])
 
         self.generate_btn = QPushButton("✨ Auto-Generate Abstract")
@@ -117,6 +126,7 @@ class MetadataWidget(QWidget):
             "format": self.fields["format"].currentText(),
             "media_url": self.fields["media_url"].text().strip(),
             "rights": self.fields["rights"].currentText(),
+            "record_id": self.fields["record_id"].text().strip(),
             "abstract": self.fields["abstract"].toPlainText().strip(),
         }
 

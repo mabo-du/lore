@@ -66,9 +66,11 @@ Before transcribing, it's highly recommended to provide Lore with contextual ter
 1. Click the **⚙️ Settings** button on the top right of the toolbar.
 2. In the **Custom Vocabulary** field, enter a comma-separated list of terms that are specific to your recording.
    - *Example: "Nunn Center, oral history, John Doe, Appalachia"*
-3. These terms are passed to the AI as an "initial prompt." The AI will use this prompt to heavily bias its decoding towards spelling these localized terms correctly, without slowing down the transcription speed.
-4. Select your preferred **Speaker Diarization Engine**: Resemblyzer (fast, no token required) or Pyannote 3.1 (high accuracy, requires HuggingFace token).
-   - Your HuggingFace token is encrypted before storage using AES-256 Fernet encryption.
+3. Select your **Model Quality Tier**: Fast (small model, lower accuracy), Balanced (medium), or Best Quality (large-v3-turbo, highest accuracy). Best Quality is the default and recommended for oral history work.
+4. These terms are passed to the AI as an "initial prompt." The AI will use this prompt to heavily bias its decoding towards spelling these localized terms correctly, without slowing down the transcription speed.
+5. Select your preferred **Speaker Diarization Engine**: Resemblyzer (fast, no token required) or Pyannote 3.1 (high accuracy, requires HuggingFace token).
+   - Your HuggingFace token is encrypted before storage using AES-256 Fernet encryption (or your system's keyring when available).
+6. Set the **Number of Speakers** (1–20) expected in the recording. The default of 2 works for most oral history interviews. Increase for panel discussions or group recordings.
 
 ## 4. Transcription & Diarization
 
@@ -86,20 +88,23 @@ Lore includes a massive, offline translation engine capable of translating betwe
 1. Once your English (or source language) transcription is complete, locate the **Translate to:** dropdown on the toolbar.
 2. Select your desired target language.
 3. Click **Translate**. The AI will generate a translated version of each segment. The original text will remain available, allowing you to export dual-language (bilingual) archives.
+4. To cancel an in-progress translation, click the **✕ Cancel** button that appears next to the Translate button.
 
 ## 6. Editing and Review
 
 AI is powerful, but it makes mistakes. Lore provides tools to quickly review and correct errors.
 
 - **Word-Level Confidence:** Lore scores every single word the AI produces. If the AI was less than 60% confident about a word, it will be highlighted with a **pale red underline**. This allows you to instantly scan a massive transcript for potential hallucinations or tricky auditory moments.
+- **Volume Control:** Use the volume slider (🔊) next to the Play button to adjust playback volume.
 - **Audio Sync:** Click on any text segment in the transcript, and the audio waveform at the top of the screen will instantly seek to that exact timestamp. Press the Play button to listen.
 - **Editing:** Double-click any segment to modify the text or correct a speaker label.
+- **Load a New File:** Click the **📂 New File** button on the toolbar to return to the file picker and open a different audio file without restarting the app.
 
 ## 7. Metadata & Archival Export
 
 Lore is built for archival standards. On the right side of the screen, you will find the **Metadata Form**.
 
-1. Fill out the required OHMS XML fields (Interview Title, Repository Name, Interviewee, format, rights, etc.).
+1. Fill out the required OHMS XML fields (Interview Title, Repository Name, Interviewee, format, rights, etc.). You can optionally set a **Record ID (CMS Ref)** to identify this interview in your content management system. If left blank, a random ID is generated on export.
 2. **Auto-Generate Abstract:** Click the purple `✨ Auto-Generate Abstract` button to have Lore's local AI (Qwen 2.5) read the entire transcript and generate a concise, professional summary for your archives.
 3. **Export Options:**
    - **Export OHMS XML:** Saves a raw `transcript.xml` file conforming to the OHMS XML 6.0 schema, including your transcript, translation, metadata, and auto-extracted named entities.

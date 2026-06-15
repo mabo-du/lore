@@ -5,9 +5,10 @@ from typing import List, Tuple, Optional
 
 
 class DiarizationEngine:
-    def __init__(self, use_pyannote: bool = False, hf_token: Optional[str] = None):
+    def __init__(self, use_pyannote: bool = False, hf_token: Optional[str] = None, num_speakers: int = 2):
         self.use_pyannote = use_pyannote
         self.hf_token = hf_token
+        self.num_speakers = num_speakers
 
     def run_diarization(self, audio_path: Path) -> List[Tuple[float, float, str]]:
         """
@@ -28,7 +29,7 @@ class DiarizationEngine:
 
         # Initialize pipeline (loads from HuggingFace cache or downloads if missing)
         pipeline = Pipeline.from_pretrained(
-            "pyannote/speaker-diarization-3.1", use_auth_token=self.hf_token
+            "pyannote/speaker-diarization-3.1", token=self.hf_token
         )
 
         if pipeline is None:
@@ -66,8 +67,8 @@ class DiarizationEngine:
         if len(cont_embeds) == 0:
             return [(0.0, len(wav) / 16000.0, "SPEAKER_00")]
 
-        # We assume 2 speakers for oral history by default in Resemblyzer fallback
-        clusterer = KMeans(n_clusters=2, n_init=10, random_state=42)
+        # Use configurable number of speakers (default 2) for Resemblyzer fallback
+        clusterer = KMeans(n_clusters=self.num_speakers, n_init=10, random_state=42)
         labels = clusterer.fit_predict(cont_embeds)
 
         # Guard against length mismatch between embeddings and wav_splits
