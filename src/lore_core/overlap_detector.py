@@ -67,7 +67,7 @@ class OverlapDetector:
     Loads the model lazily on first call to detect().
     """
 
-    def __init__(self, threshold: float = 0.5):
+    def __init__(self, threshold: float = 0.3):
         self.threshold = threshold
         self._session = None
         self._input_name = None
@@ -153,11 +153,11 @@ class OverlapDetector:
             )
             logits = outputs[0]  # (1, n_frames, 7)
 
-            # Determine the per-frame overlap score directly from classes 4-6
-            overlap_logits = logits[0, :, _CLASS_OVERLAP_START:_CLASS_OVERLAP_END + 1]
-            overlap_score = self._softmax(overlap_logits, axis=-1).max(axis=-1)
-            # overlap_score is now (n_frames,) with values 0..1 indicating
-            # how strongly the model thinks this frame contains overlap.
+            # Apply softmax to ALL 7 classes, then extract overlap probs
+            all_probs = self._softmax(logits[0], axis=-1)  # (n_frames, 7)
+            overlap_score = all_probs[:, _CLASS_OVERLAP_START:_CLASS_OVERLAP_END + 1].max(axis=-1)
+            # overlap_score is now (n_frames,) in [0, 1] indicating how
+            # strongly the model thinks this frame contains overlap.
 
             # Map window-local frame index to global frame index
             global_offset = start // step_samples * (window_samples // step_samples)

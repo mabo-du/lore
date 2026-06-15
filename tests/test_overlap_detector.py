@@ -5,15 +5,16 @@ Prerequisites (run once):
     python -c "from utils.model_manager import ModelManager; ModelManager.ensure_model('Segmentation')"
 
 This test requires:
-    - onnxruntime (pip install onnxruntime)
+    - onnxruntime (installed with lore-ai)
     - The segmentation model downloaded (see above)
-    - A real audio file — synthetic WAV is generated in the fixture
+    - A source WAV of speech to create the overlap fixture
 
-If the model isn't cached, ModelManager.ensure_model() will download it
-(~5.99 MB) on first run.
+The overlap fixture uses real human speech (the pyannote sample WAV
+shipped with pyannote-audio) and overlays two segments to create a
+realistic 2-speaker overlap that the model was trained to recognise.
 """
 
-import struct
+import wave
 import numpy as np
 import pytest
 from pathlib import Path
@@ -21,17 +22,19 @@ from pathlib import Path
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
-def _make_sine_wav(path: Path, duration_s: float, freq_hz: float,
-                   amplitude: float = 0.3, sample_rate: int = 16000):
-    """Write a mono sine wave to path as 16-bit PCM WAV."""
-    import wave
-    t = np.linspace(0, duration_s, int(sample_rate * duration_s), endpoint=False)
-    samples = (amplitude * np.sin(2 * np.pi * freq_hz * t) * 32767).astype(np.int16)
-    with wave.open(str(path), "wb") as w:
-        w.setnchannels(1)
-        w.setsampwidth(2)
-        w.setframerate(sample_rate)
-        w.writeframes(samples.tobytes())
+_SPEECH_WAV = Path(__file__).parent.parent / ".venv" / "lib" / "python3.13" / \
+    "site-packages" / "pyannote" / "audio" / "sample" / "sample.wav"
+
+_SAMPLE_WAV = Path(__file__).parent.parent / "sample.norm.wav"
+
+
+def _read_wav(path: Path) -> tuple[np.ndarray, int]:
+    """Read a WAV file, return (samples as float32 [-1,1], sample_rate)."""
+    with wave.open(str(path), "rb") as w:
+        sr = w.getframerate()
+        raw = w.readframes(w.getnframes())
+    samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+    return samples, sr
 
 
 # ── Fixtures ─────────────────────────────────────────────────────────────
@@ -40,7 +43,6 @@ def _make_sine_wav(path: Path, duration_s: float, freq_hz: float,
 def silent_wav(tmp_path) -> Path:
     """3 seconds of pure silence (all zeros)."""
     p = tmp_path / "silent.wav"
-    import wave
     with wave.open(str(p), "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
@@ -52,27 +54,44 @@ def silent_wav(tmp_path) -> Path:
 @pytest.fixture
 def overlap_wav(tmp_path) -> Path:
     """
-    6-second WAV with a known overlap region:
+    10-second WAV with two overlapping speech segments from different
+    time regions of the same source (acoustically distinct pockets).
 
-        0.0s – 2.0s:  440 Hz tone (Speaker A)
-        2.0s – 4.0s:  440 Hz + 660 Hz (Speaker A + Speaker B — OVERLAP)
-        4.0s – 6.0s:  660 Hz tone (Speaker B)
+        0.0s – 5.0s:  Speech segment A (pyannote sample, beginning)
+        2.0s – 7.0s:  Speech segment B (same source, later region — acoustically distinct)
+        5.0s – 10.0s: Speech segment A alone
+
+    The overlap window is 2.0s–5.0s. The two segments come from well-separated
+    time regions of the source so the model treats them as distinct speakers.
+
+    Falls back to sample.norm.wav if pyannote sample is unavailable.
     """
     p = tmp_path / "overlap.wav"
-    sr = 16000
-    t1 = np.linspace(0, 2.0, int(sr * 2.0), endpoint=False)
-    t2 = np.linspace(2.0, 4.0, int(sr * 2.0), endpoint=False)
-    t3 = np.linspace(4.0, 6.0, int(sr * 2.0), endpoint=False)
 
-    seg1 = (0.3 * np.sin(2 * np.pi * 440 * t1) * 32767).astype(np.int16)
-    # Overlap: both tones at reduced amplitude to avoid clipping
-    seg2 = (0.2 * np.sin(2 * np.pi * 440 * t2) + 0.2 * np.sin(2 * np.pi * 660 * t2))
-    seg2 = (seg2 * 32767).astype(np.int16)
-    seg3 = (0.3 * np.sin(2 * np.pi * 660 * t3) * 32767).astype(np.int16)
+    source = _SPEECH_WAV if _SPEECH_WAV.exists() else _SAMPLE_WAV
+    speech, sr = _read_wav(source)
 
-    samples = np.concatenate([seg1, seg2, seg3])
+    ws = int(sr * 10.0)  # 10-second window (model input size)
+    seg_a = speech[:ws]  # First 10 seconds
 
-    import wave
+    # Take segment B from a different time region of the same file
+    # (the pyannote sample is 30s, so 12-22s is well-separated)
+    seg_b_source = speech[min(int(sr * 12.0), len(speech) - ws):]
+    seg_b_source = seg_b_source[:ws]
+    if len(seg_b_source) < ws:
+        seg_b_source = np.pad(seg_b_source, (0, ws - len(seg_b_source)))
+    seg_b = seg_b_source
+
+    # Silence seg_b except for a 3-second window that overlaps with seg_a
+    silence = np.zeros(ws, dtype=np.float32)
+    silence[int(sr * 2.0):int(sr * 5.0)] = 1.0
+    seg_b = seg_b * silence * 0.6
+
+    # Mix: keep seg_a at full, add seg_b at reduced gain
+    mixed = seg_a + seg_b
+    mixed = np.clip(mixed, -1.0, 1.0)
+    samples = (mixed * 32767).astype(np.int16)
+
     with wave.open(str(p), "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
@@ -112,7 +131,7 @@ class TestOverlapDetectorSmoke:
         OverlapRegion whose time bounds intersect the overlap window.
         """
         from lore_core.overlap_detector import OverlapDetector
-        d = OverlapDetector(threshold=0.3)  # Lower threshold for synthetic tones
+        d = OverlapDetector(threshold=0.3)
         regions = d.detect(overlap_wav)
 
         assert len(regions) > 0, (
