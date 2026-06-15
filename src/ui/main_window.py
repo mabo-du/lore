@@ -269,6 +269,9 @@ class MainWindow(QMainWindow):
             self.ner_worker.enqueue_segment, Qt.ConnectionType.QueuedConnection
         )
         self.ner_worker.entities_detected.connect(self.transcript_model.add_entities)
+        self.ner_worker.backchannel_detected.connect(
+            lambda s: print(f"Backchannel (rule): [{s.start_ms}ms] {s.text}")
+        )
         self.ner_worker.error.connect(lambda e: print(f"NER Error: {e}"))
 
         self.ner_worker.start()
@@ -396,6 +399,9 @@ class MainWindow(QMainWindow):
         )
         self.ner_worker.entities_detected.connect(
             self.transcript_model.add_entities
+        )
+        self.ner_worker.backchannel_detected.connect(
+            lambda s: print(f"Backchannel (rule): [{s.start_ms}ms] {s.text}")
         )
         self.ner_worker.error.connect(lambda e: print(f"NER Error: {e}"))
 

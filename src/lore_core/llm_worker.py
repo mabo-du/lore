@@ -5,10 +5,76 @@ import os
 import glob
 
 
+def _format_gap(seconds: float) -> str:
+    """Format a gap duration as an inline marker token."""
+    return f"<gap={max(0.0, seconds):.1f}s>"
+
+
+def _format_enriched_transcript(transcript: Transcript, max_words: int = 2500) -> str:
+    """
+    Format transcript as speaker-labelled lines with inter-turn gap markers.
+
+    Output format:
+        SPEAKER_00: I think we should proceed.
+        <gap=3.2s>
+        SPEAKER_01: I don't think the backend is ready.
+        <gap=0.2s>
+        SPEAKER_00: The load testing cleared yesterday.
+    """
+    lines = []
+    word_count = 0
+    for i, seg in enumerate(transcript.segments):
+        # Truncate if over the word budget (applied at segment boundary)
+        seg_words = seg.text.split()
+        if word_count + len(seg_words) > max_words:
+            remaining = max_words - word_count
+            if remaining > 0:
+                lines.append(f"{seg.speaker_label or 'SPEAKER'}: {' '.join(seg_words[:remaining])} ...")
+            else:
+                lines.append("... [transcript truncated]")
+            break
+
+        # Inter-turn gap (skip SYSTEM segments for gap calculation)
+        if i > 0 and seg.speaker_label != "SYSTEM" and transcript.segments[i-1].speaker_label != "SYSTEM":
+            gap = (seg.start_ms - transcript.segments[i-1].end_ms) / 1000.0
+            if gap > 0.0:
+                lines.append(_format_gap(gap))
+
+        speaker = seg.speaker_label or "SPEAKER"
+        lines.append(f"{speaker}: {seg.text}")
+        word_count += len(seg_words)
+
+    return "\n".join(lines)
+
+
+def _build_summarization_prompt(enriched_text: str) -> tuple[str, str]:
+    """
+    Build system + user prompt for timing-aware summarisation.
+    """
+    system_prompt = (
+        "You are a professional archivist and dialogue analyst.\n\n"
+        "The transcript below contains timing markers formatted as <gap=X.Xs> "
+        "between speaker turns. These indicate the duration of silence in seconds.\n\n"
+        "Use the following temporal rules to interpret the conversation's dynamics:\n"
+        "1. Short gaps (<0.5s) indicate fast-paced, collaborative, or urgent exchanges.\n"
+        "2. Moderate gaps (0.5s-1.5s) indicate formal, structured turn-taking.\n"
+        "3. Long gaps (>1.5s) indicate hesitation, deliberation, reluctance, or topic shifts.\n\n"
+        "Apply these cues when assessing the tone and structure of the interview.\n"
+        "IMPORTANT: Do NOT mention the gap markers in your summary. Use them only as "
+        "internal context to inform your analysis."
+    )
+    user_prompt = (
+        "Please provide a concise 3-paragraph abstract of this oral history interview, "
+        "followed by a bulleted list of 5 key themes discussed.\n\n"
+        f"Transcript:\n{enriched_text}"
+    )
+    return system_prompt, user_prompt
+
+
 class LLMWorker(QThread):
     """
     Worker for generating abstracts and themes using a local LLM via llama.cpp.
-    It takes the full Transcript, constructs a prompt, and extracts the results.
+    Takes the full Transcript, constructs a timing-enriched prompt, and extracts results.
     """
 
     finished = pyqtSignal(str)  # Emits the generated abstract
@@ -43,27 +109,17 @@ class LLMWorker(QThread):
                 self.error.emit("llama-cpp-python is not installed.")
                 return
 
-            # Initialize Llama (with some sensible defaults for Qwen2.5 1.5B)
-            # Use 4096 context window to prevent OOM
+            # Initialize Llama with 4096 context window to prevent OOM
             llm = Llama(model_path=model_path, n_ctx=4096, verbose=False)
 
-            self.status_changed.emit("Preparing transcript...")
+            self.status_changed.emit("Preparing enriched transcript...")
 
-            # Combine transcript text
-            full_text = " ".join([seg.text for seg in self.transcript.segments])
-
-            # If transcript is massively long, we just truncate it for this baseline
-            # A true map-reduce is complex for a POC, so we take the first ~2500 words (~3000 tokens)
-            words = full_text.split()
-            if len(words) > 2500:
-                truncated_text = " ".join(words[:2500]) + "... [TRUNCATED]"
-            else:
-                truncated_text = full_text
+            # Format with speaker labels and inter-turn gap markers
+            enriched_text = _format_enriched_transcript(self.transcript)
 
             self.status_changed.emit("Generating abstract and themes...")
 
-            system_prompt = "You are a professional archivist. Summarize the following oral history transcript."
-            user_prompt = f"Please provide a concise 3-paragraph abstract of this interview, followed by a bulleted list of 5 key themes discussed.\n\nTranscript:\n{truncated_text}"
+            system_prompt, user_prompt = _build_summarization_prompt(enriched_text)
 
             output = llm.create_chat_completion(
                 messages=[
