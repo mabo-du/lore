@@ -18,6 +18,7 @@ class ModelManager:
         "NER": "lmo3/gliner2-large-v1-onnx",
         "LLM": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
         "Translation": "JustFrederik/nllb-200-distilled-600M-ct2-int8",
+        "Segmentation": "onnx-community/pyannote-segmentation-3.0",
     }
 
     @staticmethod

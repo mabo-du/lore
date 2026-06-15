@@ -2,7 +2,7 @@ from pathlib import Path
 from PyQt6.QtCore import QThread, pyqtSignal
 from utils.model_manager import ModelManager
 from lore_core.engine import TranscriptionEngine
-from models.transcript import Segment
+from models.transcript import Segment, OverlapRegion
 
 
 class TranscriptionWorker(QThread):
@@ -17,6 +17,7 @@ class TranscriptionWorker(QThread):
     diarization_completed = pyqtSignal(
         list
     )  # Emits updated list of segments with speakers
+    overlap_detected = pyqtSignal(list)  # Emits list[OverlapRegion]
     finished = pyqtSignal()
     error = pyqtSignal(str)
 
@@ -29,6 +30,7 @@ class TranscriptionWorker(QThread):
         hf_token: str = None,
         custom_vocab: str = "",
         num_speakers: int = 2,
+        enable_overlap_detection: bool = True,
         parent=None,
     ):
         super().__init__(parent)
@@ -39,6 +41,7 @@ class TranscriptionWorker(QThread):
         self.hf_token = hf_token
         self.custom_vocab = custom_vocab
         self.num_speakers = num_speakers
+        self.enable_overlap_detection = enable_overlap_detection
 
     def run(self):
         try:
@@ -90,6 +93,23 @@ class TranscriptionWorker(QThread):
                 self.status_changed.emit("Aligning speakers...")
                 diarizer.align_speakers_to_segments(all_segments, d_results)
                 self.diarization_completed.emit(all_segments)
+
+            # Phase 3: Overlap Detection (post-diarization, via lightweight ONNX model)
+            if self.enable_overlap_detection:
+                self.status_changed.emit("Detecting overlapping speech...")
+                try:
+                    from lore_core.overlap_detector import OverlapDetector
+
+                    detector = OverlapDetector()
+                    overlap_regions = detector.detect(self.audio_path)
+                    if overlap_regions:
+                        self.overlap_detected.emit(overlap_regions)
+                except Exception as e:
+                    # Overlap detection is optional — log and continue
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        "Overlap detection failed (non-fatal): %s", e
+                    )
 
             self.status_changed.emit("Transcription complete.")
             self.finished.emit()

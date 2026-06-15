@@ -255,6 +255,7 @@ class MainWindow(QMainWindow):
         self.worker.status_changed.connect(self.status_label.setText)
         self.worker.segment_completed.connect(self.transcript_model.add_segment)
         self.worker.diarization_completed.connect(self.transcript_model.update_segments)
+        self.worker.overlap_detected.connect(self._on_overlap_detected)
         self.worker.finished.connect(self._on_transcription_finished)
         self.worker.error.connect(self._on_transcription_error)
 
@@ -380,6 +381,7 @@ class MainWindow(QMainWindow):
         self.worker.diarization_completed.connect(
             self.transcript_model.update_segments
         )
+        self.worker.overlap_detected.connect(self._on_overlap_detected)
         self.worker.finished.connect(self._on_transcription_finished)
         self.worker.error.connect(self._on_transcription_error)
 
@@ -435,6 +437,15 @@ class MainWindow(QMainWindow):
             self.rag_worker.start()
         except Exception as e:
             print(f"Failed to start RAGWorker: {e}")
+
+    def _on_overlap_detected(self, overlap_regions):
+        """Store detected overlap regions in the transcript model."""
+        transcript = self.transcript_model.get_transcript()
+        transcript.overlap_regions = overlap_regions
+        if overlap_regions:
+            count = len(overlap_regions)
+            total_s = sum(r.end_ms - r.start_ms for r in overlap_regions) / 1000.0
+            print(f"Overlap: {count} region(s), {total_s:.1f}s total")
 
     def _on_transcription_error(self, err_msg: str):
         self.status_label.setText(f"Transcription Error:\n{err_msg}")
