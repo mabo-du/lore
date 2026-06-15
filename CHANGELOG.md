@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] — 2026-06-16
+
+### Added
+- **ONNX-based overlap detection (Phase 1)** — `OverlapDetector` class using `onnx-community/pyannote-segmentation-3.0` ONNX model (5.99 MB). Detects overlapping speech regions via 7-class output (non-speech, 3 single-speaker, 3 overlap classes). Runs post-transcription as a lightweight ONNX Runtime session (~6 MB RAM) instead of the previous PyTorch pipeline (~1.5 GiB). Configurable per-use-case threshold (default 0.3).
+- **Gap-enriched LLM summarization** — `LLMWorker` now formats transcripts with speaker labels and `<gap=X.Xs>` inter-turn markers. The system prompt instructs the model to interpret short gaps as collaborative, moderate as formal, and long gaps as hesitant/adversarial — without mentioning the markers in output. All data already existed in `Segment.start_ms`/`end_ms`; zero new dependencies.
+- **Backchannel Stage 1 (rule-based)** — `NERWorker` now checks every segment against a filler-word lexicon (`mhm`, `uh-huh`, `yeah`, `right`, `okay`, etc.) with an 800ms duration cap. Classified backchannels skip NER entirely (no entities to extract). Zero-cost — pure string matching on already-loaded data.
+- **Smoke tests** — `tests/test_overlap_detector.py` (4 tests: model validation, silent audio, synthetic overlap detection, minimum duration) and `tests/test_transcription_smoke.py` (full pipeline integration test using `sample.ogg`).
+- **Deep research reports** — 9 papers covering overlap detection, timing-enriched summarization, prosody extraction, backchannel classification, and active speaker detection, stored in `docs/research-papers/`. Implementation plans updated in `docs/research-prompts/`.
+- **Pre-fetch models backlog item** — `docs/backlog/prefetch-models.md` documents the offline field-worker use case with solution options and per-model size table. Blocking for v0.2.0.
+
+### Fixed
+- **Overlap detector softmax** — Softmax was applied only to the 3 overlap class logits (artificially inflating their probabilities). Now applied to all 7 classes, then overlap probabilities extracted from the full distribution. Correct output shape validation added via dummy-tensor assertion at model load time.
+- **Float/int bug in validation block** — `np.zeros((1, 1, WINDOW_SIZE_S * SAMPLE_RATE))` produced a float shape value; wrapped with `int()`.
+- **Entry point shebang** — Re-ran `pip install -e .` to fix stale shebang from a previous install location.
+- **Overlap detector window size** — Corrected from 5s to 10s to match the actual ONNX model's input expectation.
+
+### Changed
+- **Overlap detector default threshold** — Lowered from 0.5 to 0.3 based on empirical testing (single-speaker audio maxes at ~0.076 on full 7-class softmax; real overlap regions reach 0.3–0.97).
+- **Backchannel data model** — `Segment` now has `is_backchannel: bool` and `backchannel_source: str` fields for downstream consumers.
+
 ## [0.1.3] — 2026-06-15
 
 ### Added
