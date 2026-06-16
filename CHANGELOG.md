@@ -17,6 +17,11 @@
 ### Changed
 - **Overlap detector default threshold** — Lowered from 0.5 to 0.3 based on empirical testing (single-speaker audio maxes at ~0.076 on full 7-class softmax; real overlap regions reach 0.3–0.97).
 - **Backchannel data model** — `Segment` now has `is_backchannel: bool` and `backchannel_source: str` fields for downstream consumers.
+- **Whisper model resolution** — Switched from non-existent `Systran/faster-whisper-large-v3-turbo` HF repo to faster-whisper's native `"turbo"` size string. ModelManager now returns faster-whisper size strings for Whisper tiers instead of calling `snapshot_download` on invalid repo IDs.
+
+### Fixed
+- **Crash in transcript widget** — `paint()` method used `QStyleOptionViewItem.StateFlag.State_Selected` which doesn't exist in PyQt6 6.11.0. Changed to `QStyle.StateFlag.State_Selected`. The unhandled `AttributeError` in the delegate's paint method was terminating the application when rendering selected items.
+- **Best Quality model 404** — `Systran/faster-whisper-large-v3-turbo` repository doesn't exist on HuggingFace. Changed all Whisper tiers to use native size strings (`"small"`, `"medium"`, `"turbo"`) which faster-whisper resolves internally.
 
 ## [0.1.3] — 2026-06-15
 
