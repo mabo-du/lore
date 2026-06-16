@@ -10,10 +10,18 @@ class ModelManager:
     resumable downloads and robust caching.
     """
 
+    # Whisper tiers use faster-whisper's native size strings so model
+    # resolution is handled by the library itself (no HF repo ID needed).
+    # This is more maintainable than tracking community CTranslate2 repos
+    # and will automatically pick up official Systran releases when available.
+    WHISPER_SIZES = {
+        "Fast": "small",
+        "Balanced": "medium",
+        "Best Quality": "turbo",
+    }
+
     MODELS = {
-        "Fast": "Systran/faster-whisper-small",
-        "Balanced": "Systran/faster-whisper-medium",
-        "Best Quality": "Systran/faster-whisper-large-v3-turbo",
+        **WHISPER_SIZES,
         "YAMNet": "zeropointnine/yamnet-onnx",
         "NER": "lmo3/gliner2-large-v1-onnx",
         "LLM": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
@@ -50,64 +58,79 @@ class ModelManager:
         """
         Ensures the model is downloaded. In a CLI context this just blocks.
         In a GUI context, we would run this inside a QThread.
+
+        Returns a local path string for non-Whisper models, or a Whisper
+        size string (e.g. "turbo") for Whisper tiers — faster-whisper's
+        WhisperModel() accepts size strings natively and handles HF
+        download internally.
         """
-        repo_id = cls.MODELS.get(quality_tier, cls.MODELS["Best Quality"])
+        identifier = cls.MODELS.get(quality_tier, cls.MODELS["Best Quality"])
+
+        # Whisper tiers use size strings — faster-whisper handles resolution
+        if quality_tier in cls.WHISPER_SIZES:
+            return identifier
+
+        # All other models: download via huggingface_hub
         if quality_tier in ["NER", "LLM", "Translation"]:
-            cache_dir = cls.get_ner_cache_dir()  # Lore-specific models
+            cache_dir = cls.get_ner_cache_dir()
         else:
             cache_dir = cls.get_cache_dir()
 
-        # snapshot_download will only download missing/updated files
         if quality_tier == "YAMNet":
             model_path = snapshot_download(
-                repo_id=repo_id,
+                repo_id=identifier,
                 cache_dir=cache_dir,
                 local_files_only=False,
                 allow_patterns=["yamnet.onnx", "yamnet_class_map.csv"],
             )
         elif quality_tier == "LLM":
             model_path = snapshot_download(
-                repo_id=repo_id,
+                repo_id=identifier,
                 cache_dir=cache_dir,
                 local_files_only=False,
-                allow_patterns=[
-                    "*q4_k_m.gguf"
-                ],  # Specifically target a small, solid quant
+                allow_patterns=["*q4_k_m.gguf"],
             )
         else:
             model_path = snapshot_download(
-                repo_id=repo_id, cache_dir=cache_dir, local_files_only=False
+                repo_id=identifier, cache_dir=cache_dir, local_files_only=False
             )
         return model_path
 
     @classmethod
     def get_model_path(cls, quality_tier: str = "Best Quality") -> Path | None:
-        """Returns the local path if it exists, otherwise None"""
-        repo_id = cls.MODELS.get(quality_tier, cls.MODELS["Best Quality"])
+        """Returns the local path if it exists, otherwise None.
+
+        For Whisper tiers (size strings like "turbo") this returns None
+        since faster-whisper handles resolution internally."""
+        identifier = cls.MODELS.get(quality_tier, cls.MODELS["Best Quality"])
+
+        # Whisper tiers don't map to a local path — handled by faster-whisper
+        if quality_tier in cls.WHISPER_SIZES:
+            return None
+
         if quality_tier in ["NER", "LLM", "Translation"]:
             cache_dir = cls.get_ner_cache_dir()
         else:
             cache_dir = cls.get_cache_dir()
 
-        # Check if we can find it local_files_only
         try:
             if quality_tier == "YAMNet":
                 path = snapshot_download(
-                    repo_id=repo_id,
+                    repo_id=identifier,
                     cache_dir=cache_dir,
                     local_files_only=True,
                     allow_patterns=["yamnet.onnx", "yamnet_class_map.csv"],
                 )
             elif quality_tier == "LLM":
                 path = snapshot_download(
-                    repo_id=repo_id,
+                    repo_id=identifier,
                     cache_dir=cache_dir,
                     local_files_only=True,
                     allow_patterns=["*q4_k_m.gguf"],
                 )
             else:
                 path = snapshot_download(
-                    repo_id=repo_id, cache_dir=cache_dir, local_files_only=True
+                    repo_id=identifier, cache_dir=cache_dir, local_files_only=True
                 )
             return Path(path)
         except Exception:
