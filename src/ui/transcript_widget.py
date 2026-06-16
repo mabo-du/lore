@@ -152,11 +152,15 @@ class TranscriptDelegate(QStyledItemDelegate):
             rect.height() - time_rect.height() - self.spacing,
         )
 
-        # Using QTextDocument for rich text/word wrapping
+        # Using QTextDocument for rich text/word wrapping.
+        # QTextDocument ignores the painter's pen — must set color via HTML.
         doc = QTextDocument()
         doc.setDefaultFont(font)
 
-        display_text = text
+        # Convert QColor to hex string for inline CSS
+        text_hex = text_color.name()
+        text_alpha = text_color.alpha()
+
         if words:
             html_words = []
             for w in words:
@@ -165,11 +169,14 @@ class TranscriptDelegate(QStyledItemDelegate):
                         f"<span style='color: #ffaa99; text-decoration: underline;'>{w['word']}</span>"
                     )
                 else:
-                    html_words.append(w["word"])
+                    html_words.append(
+                        f"<span style='color: {text_hex};'>{w['word']}</span>"
+                    )
             display_text = "".join(html_words)
+        else:
+            display_text = f"<span style='color: {text_hex};'>{text}</span>"
 
         if translation:
-            # We add styling so the translation stands out
             display_text += f"<br><br><span style='color: #a0c0ff;'><b>Translation:</b> {translation}</span>"
 
         doc.setHtml(display_text)

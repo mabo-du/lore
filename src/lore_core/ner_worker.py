@@ -93,13 +93,13 @@ class NERWorker(QThread):
 
                 entities = []
                 for ent in raw_entities:
-                    # Entity format: {'start': int, 'end': int, 'text': str, 'label': str, 'score': float}
+                    # GLiNER2 returns Entity objects with attribute access
                     entity_data = EntityData(
-                        start_char=ent["start"],
-                        end_char=ent["end"],
-                        text=ent["text"],
-                        label=ent["label"],
-                        score=ent["score"],
+                        start_char=ent.start,
+                        end_char=ent.end,
+                        text=ent.text,
+                        label=ent.label,
+                        score=ent.score,
                         segment_start_ms=segment.start_ms,
                     )
                     entities.append(entity_data)
