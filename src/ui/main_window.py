@@ -41,6 +41,7 @@ class AudioLoadWorker(QThread):
     Emits finished(working_audio_path) on success or error(str) on failure.
     """
 
+    status_changed = pyqtSignal(str)
     finished = pyqtSignal(str)  # working_audio_path
     error = pyqtSignal(str)
 
@@ -51,7 +52,9 @@ class AudioLoadWorker(QThread):
 
     def run(self):
         try:
+            self.status_changed.emit("Normalising audio (16kHz mono)...")
             normalise(self.input_path, self.output_path)
+            self.status_changed.emit("Normalisation complete.")
             self.finished.emit(str(self.output_path))
         except Exception as e:
             self.error.emit(str(e))
@@ -347,6 +350,7 @@ class MainWindow(QMainWindow):
         # Start normalisation in a background thread to avoid UI freeze
         output_path = self.original_audio_path.with_suffix(".norm.wav")
         self.audio_load_worker = AudioLoadWorker(self.original_audio_path, output_path)
+        self.audio_load_worker.status_changed.connect(self.status_label.setText)
         self.audio_load_worker.finished.connect(self._on_audio_ready)
         self.audio_load_worker.error.connect(self._on_transcription_error)
         self.audio_load_worker.start()

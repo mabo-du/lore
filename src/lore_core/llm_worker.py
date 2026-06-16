@@ -88,7 +88,8 @@ class LLMWorker(QThread):
 
     def run(self):
         try:
-            self.status_changed.emit("Ensuring LLM is downloaded...")
+            self.status_changed.emit("Downloading LLM model (1.1 GB)...")
+
             model_dir = ModelManager.ensure_model("LLM")
             if not model_dir:
                 self.error.emit("Could not download or locate LLM model.")
