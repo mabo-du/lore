@@ -1,3 +1,15 @@
+## [0.1.5] — 2026-06-16
+
+### Added
+- **Progress status signals** — `AudioLoadWorker` now emits `status_changed` with phase messages ("Normalising audio..."), wired to the status label. `LLMWorker` emits a clear "Downloading LLM model (1.1 GB)..." message before download so users know it's actively transferring, not stuck.
+- **Signal chain integration test** — `tests/test_signal_chain.py` (6 tests, 0.1s runtime) verifies the worker orchestration (`_on_file_selected` → `AudioLoadWorker` → `_on_audio_ready` → `TranscriptionWorker` → `_on_transcription_finished` → editor page) using mock workers with proper PyQt6 signal class attributes. No network, no models.
+
+### Fixed
+- **Crash in transcript widget** — `paint()` method used `QStyleOptionViewItem.StateFlag.State_Selected` which doesn't exist in PyQt6 6.11.0. Changed to `QStyle.StateFlag.State_Selected`. The unhandled `AttributeError` in the delegate's paint method was terminating the application when rendering selected items.
+- **Best Quality model 404** — `Systran/faster-whisper-large-v3-turbo` repository doesn't exist on HuggingFace. Changed all Whisper tiers to use native size strings (`"small"`, `"medium"`, `"turbo"`) which faster-whisper resolves internally.
+- **GLiNER Entity object access** — NER worker used dict access `ent["start"]` but GLiNER2 returns Entity objects. Changed to attribute access `ent.start`.
+- **Transcript text readability** — `QTextDocument.setHtml()` ignores the painter's pen color and was rendering text in black on dark backgrounds. Wrapped all text in explicit `<span style='color:...'>` tags.
+
 ## [0.1.4] — 2026-06-16
 
 ### Added
@@ -18,10 +30,6 @@
 - **Overlap detector default threshold** — Lowered from 0.5 to 0.3 based on empirical testing (single-speaker audio maxes at ~0.076 on full 7-class softmax; real overlap regions reach 0.3–0.97).
 - **Backchannel data model** — `Segment` now has `is_backchannel: bool` and `backchannel_source: str` fields for downstream consumers.
 - **Whisper model resolution** — Switched from non-existent `Systran/faster-whisper-large-v3-turbo` HF repo to faster-whisper's native `"turbo"` size string. ModelManager now returns faster-whisper size strings for Whisper tiers instead of calling `snapshot_download` on invalid repo IDs.
-
-### Fixed
-- **Crash in transcript widget** — `paint()` method used `QStyleOptionViewItem.StateFlag.State_Selected` which doesn't exist in PyQt6 6.11.0. Changed to `QStyle.StateFlag.State_Selected`. The unhandled `AttributeError` in the delegate's paint method was terminating the application when rendering selected items.
-- **Best Quality model 404** — `Systran/faster-whisper-large-v3-turbo` repository doesn't exist on HuggingFace. Changed all Whisper tiers to use native size strings (`"small"`, `"medium"`, `"turbo"`) which faster-whisper resolves internally.
 
 ## [0.1.3] — 2026-06-15
 
