@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (
     QStyledItemDelegate,
     QTextEdit,
     QStyleOptionViewItem,
+    QStyle,
 )
 from PyQt6.QtGui import QPainter, QColor, QFontMetrics, QFont, QTextDocument
 from PyQt6.QtCore import Qt, QSize, QModelIndex, QRect
@@ -76,7 +77,7 @@ class TranscriptDelegate(QStyledItemDelegate):
         # Background
         bg_color = (
             QColor("#2d2d2d")
-            if option.state & QStyleOptionViewItem.StateFlag.State_Selected
+            if bool(option.state & QStyle.StateFlag.State_Selected)
             else QColor("#1e1e1e")
         )
         painter.fillRect(option.rect, bg_color)
