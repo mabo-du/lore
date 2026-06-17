@@ -31,7 +31,7 @@ a torch-free install.
 
 ### Phase 2a: Silero VAD ONNX integration
 
-Silero VAD already ships ONNX weights (`silero_vad.onnx` and `silero_vad_16k.ncnn`).
+Silero VAD already ships ONNX weights (`silero_vad.onnx`).
 The official repo and Hugging Face mirrors provide them. Load via:
 
 ```python
@@ -61,7 +61,13 @@ overlapping windows when classifying frames.
 1. Run overlap detection (Phase 1, already done)
 2. Remove overlapping frames from the embedding stream
 3. Cluster on clean (non-overlapping) embeddings only
-4. Assign overlapping frames to the nearest cluster
+4. Assign overlapping frames to the nearest cluster — **best-guess single
+   speaker label** only. The assignment is not multi-label; overlapping
+   frames receive whichever speaker cluster is nearest, and the existing
+   Phase 1/2 UI surfaces (overlap strip, segment badges) continue to flag
+   these regions as containing overlap. This prevents the diarization
+   output from appearing confidently wrong — the speaker label is a best
+   guess, and the overlap flag tells the researcher it's uncertain.
 
 This prevents speaker confusion caused by entangled overlapping embeddings
 (the source of ~50% of diarisation errors, per the paper's oracle analysis).
@@ -70,7 +76,7 @@ This prevents speaker confusion caused by entangled overlapping embeddings
 
 | Level | Data | Success criteria |
 |-------|------|-----------------|
-| **Floor** | VoxConverse (downloadable benchmark, YouTube/news audio) | DER within 1 point of published community-1 baseline |
+| **Floor** | VoxConverse (downloadable benchmark, YouTube/news audio) | DER matches or beats Lore's own Resemblyzer + Pyannote 3.1 measurements on the same files, not a third-party published baseline |
 | **Spot-check** | User's flagged recordings (known speaker count) | Manual review: no speaker swaps on known segments |
 
 VoxConverse as the objective floor, user's own files as the realistic
@@ -104,4 +110,7 @@ oral-history spot-check.
    from PyPI. Loading the ONNX weights directly via `onnxruntime` avoids
    this entirely (confirmed safe).
 3. **GMM-BIC implementation** — sklearn doesn't ship this directly; we
-   may need to port ~50 lines from the `diarize` source (MIT license, fine).
+   may need to port ~50 lines from the `diarize` source (Apache 2.0).
+   Apache 2.0 requires retaining the original copyright and license notice
+   with copied code — `docs/credits.md` needs a diarize entry alongside
+   the WeSpeaker CC-BY-4.0 one.
