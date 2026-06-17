@@ -8,7 +8,6 @@ Run: pytest tests/test_signal_chain.py -v
 """
 
 from pathlib import Path
-import pytest
 from PyQt6.QtCore import QObject, pyqtSignal
 
 
@@ -112,7 +111,7 @@ class TestSignalChain:
     def test_full_pipeline_ends_at_editor(self, qtbot):
         """After normalisation + transcription, editor page should be active."""
         harness = SignalChainHarness()
-        with qtbot.wait_signal(harness.page_changed, timeout=5000) as blocker:
+        with qtbot.wait_signal(harness.page_changed, timeout=5000):
             harness._on_file_selected(Path("/mock/file.wav"))
         # The chain fires synchronously — last emission is page_changed(2)
         assert harness.current_page == 2

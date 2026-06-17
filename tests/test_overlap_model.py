@@ -1,6 +1,5 @@
 """Tests for TranscriptListModel overlap helper."""
 
-import pytest
 from models.transcript import Transcript, OverlapRegion, Segment
 from models.transcript_model import TranscriptListModel
 

@@ -1,8 +1,6 @@
 """Tests for OHMS XML export with VTT overlap annotation."""
 
-from pathlib import Path
 
-import pytest
 from lxml import etree
 
 

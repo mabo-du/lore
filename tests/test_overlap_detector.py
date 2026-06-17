@@ -135,7 +135,7 @@ class TestOverlapDetectorSmoke:
         regions = d.detect(overlap_wav)
 
         assert len(regions) > 0, (
-            f"Expected at least 1 overlap region in overlapping audio, got 0"
+            "Expected at least 1 overlap region in overlapping audio, got 0"
         )
 
         # At least one region should overlap with the 2.0s-4.0s window
@@ -164,6 +164,6 @@ class TestOverlapDetectorSmoke:
         # At least one region should be >500ms
         long_enough = [r for r in regions if (r.end_ms - r.start_ms) >= 500]
         assert len(long_enough) > 0, (
-            f"No region exceeds 500ms minimum. Durations: "
+            "No region exceeds 500ms minimum. Durations: "
             + ", ".join(f"{r.end_ms - r.start_ms}ms" for r in regions)
         )
