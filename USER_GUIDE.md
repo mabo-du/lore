@@ -6,12 +6,13 @@ Welcome to Lore! This guide will walk you through the end-to-end process of tran
 1. [Installation](#installation)
 2. [Getting Started](#getting-started)
 3. [Configuring Custom Vocabulary](#configuring-custom-vocabulary)
-4. [Transcription & Diarization](#transcription--diarization)
-5. [Translation](#translation)
-6. [Editing and Review](#editing-and-review)
+4. [Offline Preparation](#offline-preparation)
+5. [Transcription & Diarization](#transcription--diarization)
+6. [Translation](#translation)
+7. [Editing and Review](#editing-and-review)
    - [Overlapping Speech](#overlapping-speech)
-7. [Metadata & Archival Export](#metadata--archival-export)
-8. [Global Search](#global-search)
+8. [Metadata & Archival Export](#metadata--archival-export)
+9. [Global Search](#global-search)
 
 ---
 
@@ -73,7 +74,29 @@ Before transcribing, it's highly recommended to provide Lore with contextual ter
    - Your HuggingFace token is encrypted before storage using AES-256 Fernet encryption (or your system's keyring when available).
 6. Set the **Number of Speakers** (1–20) expected in the recording. The default of 2 works for most oral history interviews. Increase for panel discussions or group recordings.
 
-## 4. Transcription & Diarization
+## 4. Offline Preparation
+
+Lore downloads AI models on first use. If you're heading to the field without reliable internet, pre-cache everything beforehand:
+
+```bash
+# Pre-fetch all models for the default tier (from Settings)
+lore --prefetch-models
+
+# Pre-fetch for a specific model tier
+lore --prefetch-models --tier "Best Quality"
+
+# Check what's cached
+lore --prefetch-models --check
+
+# Switch to offline mode (fails fast on missing models)
+lore --offline
+```
+
+Both `--prefetch-models` and normal Lore operation respect `--offline`: when set, any missing model raises an immediate error instead of hanging while `huggingface_hub` times out trying to reach the internet.
+
+**Model cache location:** `~/.local/share/heritage-tools/`
+
+## 5. Transcription & Diarization
 
 With your audio loaded and vocabulary set, you're ready to extract the text.
 
@@ -82,7 +105,7 @@ With your audio loaded and vocabulary set, you're ready to extract the text.
    - *Note: Lore runs entirely on your CPU. Transcription speed depends on your processor. For a 1-hour file on a modern CPU, it typically takes 10-20 minutes.*
 3. As segments are processed, they will appear in real-time in the main transcript window.
 
-## 5. Translation
+## 6. Translation
 
 Lore includes a massive, offline translation engine capable of translating between 200+ languages.
 
@@ -91,7 +114,7 @@ Lore includes a massive, offline translation engine capable of translating betwe
 3. Click **Translate**. The AI will generate a translated version of each segment. The original text will remain available, allowing you to export dual-language (bilingual) archives.
 4. To cancel an in-progress translation, click the **✕ Cancel** button that appears next to the Translate button.
 
-## 6. Editing and Review
+## 7. Editing and Review
 
 AI is powerful, but it makes mistakes. Lore provides tools to quickly review and correct errors.
 
@@ -110,7 +133,7 @@ Lore automatically detects when two or more speakers talk simultaneously using a
 
 Overlap detection runs automatically during transcription. No configuration needed.
 
-## 7. Metadata & Archival Export
+## 8. Metadata & Archival Export
 
 Lore is built for archival standards. On the right side of the screen, you will find the **Metadata Form**.
 
@@ -120,7 +143,7 @@ Lore is built for archival standards. On the right side of the screen, you will 
    - **Export OHMS XML:** Saves a raw `transcript.xml` file conforming to the OHMS XML 6.0 schema, including your transcript, translation, metadata, and auto-extracted named entities.
    - **📦 Export BagIt Package:** Generates a full RFC 8493 compliant folder structure. It packages your original audio and the OHMS XML together, generating SHA-256 cryptographic checksums to guarantee data integrity for long-term cold storage.
 
-## 8. Global Search
+## 9. Global Search
 
 Lore automatically indexes every transcript you export into a global, unified database.
 
