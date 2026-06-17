@@ -1,4 +1,5 @@
 from PyQt6.QtWidgets import (
+    QCheckBox,
     QDialog,
     QVBoxLayout,
     QHBoxLayout,
@@ -14,6 +15,7 @@ from PyQt6.QtWidgets import (
     QSpinBox,
 )
 from PyQt6.QtCore import QSettings
+from utils.model_manager import ModelManager
 from utils.token_vault import encrypt_token, decrypt_token
 
 
@@ -96,6 +98,25 @@ class SettingsDialog(QDialog):
 
         layout.addWidget(diarization_group)
 
+        # Offline / Pre-fetch Group
+        offline_group = QGroupBox("Offline & Pre-fetch")
+        offline_layout = QVBoxLayout(offline_group)
+
+        self.offline_checkbox = QCheckBox(
+            "Offline Mode (fail fast on missing models, no network checks)"
+        )
+
+        self.prefetch_btn = QPushButton("Download Models")
+        self.prefetch_btn.clicked.connect(self._run_prefetch)
+        self.prefetch_status = QLabel("")
+        self.prefetch_status.setStyleSheet("color: gray; font-size: 11px;")
+
+        offline_layout.addWidget(self.offline_checkbox)
+        offline_layout.addWidget(self.prefetch_btn)
+        offline_layout.addWidget(self.prefetch_status)
+
+        layout.addWidget(offline_group)
+
         # Buttons
         btn_layout = QHBoxLayout()
         btn_save = QPushButton("Save")
@@ -115,6 +136,21 @@ class SettingsDialog(QDialog):
 
     def _toggle_token_input(self):
         self.token_input.setEnabled(self.radio_pyannote.isChecked())
+
+    def _run_prefetch(self):
+        """Download all models for the currently selected tier."""
+        tier = self.model_tier_combo.currentText()
+        self.prefetch_btn.setEnabled(False)
+        self.prefetch_status.setText(f"Downloading models for {tier} tier...")
+        self.prefetch_status.repaint()
+
+        try:
+            ModelManager.prefetch(tier)
+            self.prefetch_status.setText("All models downloaded.")
+        except Exception as e:
+            self.prefetch_status.setText(f"Error: {e}")
+        finally:
+            self.prefetch_btn.setEnabled(True)
 
     def load_settings(self):
         use_pyannote = self.settings.value("diarization/use_pyannote", False, type=bool)
@@ -136,6 +172,9 @@ class SettingsDialog(QDialog):
 
         num_speakers = self.settings.value("diarization/num_speakers", 2, type=int)
         self.speaker_count_spin.setValue(num_speakers)
+
+        offline_enabled = self.settings.value("offline/enabled", False, type=bool)
+        self.offline_checkbox.setChecked(offline_enabled)
 
     def save_settings(self):
         if self.radio_pyannote.isChecked() and not self.token_input.text().strip():
@@ -161,5 +200,8 @@ class SettingsDialog(QDialog):
         )
         self.settings.setValue(
             "diarization/num_speakers", self.speaker_count_spin.value()
+        )
+        self.settings.setValue(
+            "offline/enabled", self.offline_checkbox.isChecked()
         )
         self.accept()

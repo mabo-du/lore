@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QMainWindow,
@@ -249,6 +250,10 @@ class MainWindow(QMainWindow):
         quality_tier = settings.value("transcription/model_tier", "Best Quality")
         num_speakers = settings.value("diarization/num_speakers", 2, type=int)
 
+        offline_enabled = settings.value("offline/enabled", False, type=bool)
+        if offline_enabled:
+            os.environ["HF_HUB_OFFLINE"] = "1"
+
         # We pass diarization settings to the worker
         self.worker = TranscriptionWorker(
             self.working_audio_path,
@@ -376,6 +381,10 @@ class MainWindow(QMainWindow):
         custom_vocab = settings.value("transcription/custom_vocab", "")
         quality_tier = settings.value("transcription/model_tier", "Best Quality")
         num_speakers = settings.value("diarization/num_speakers", 2, type=int)
+
+        offline_enabled = settings.value("offline/enabled", False, type=bool)
+        if offline_enabled:
+            os.environ["HF_HUB_OFFLINE"] = "1"
 
         self.transcript_model.clear_segments()
 
