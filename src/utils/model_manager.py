@@ -11,6 +11,8 @@ class ModelManager:
     resumable downloads and robust caching.
     """
 
+    VAD_FILENAME = "silero_vad.onnx"
+
     # Whisper tiers use faster-whisper's native size strings so model
     # resolution is handled by the library itself (no HF repo ID needed).
     # This is more maintainable than tracking community CTranslate2 repos
@@ -43,6 +45,7 @@ class ModelManager:
         "LLM": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
         "Translation": "JustFrederik/nllb-200-distilled-600M-ct2-int8",
         "Segmentation": "onnx-community/pyannote-segmentation-3.0",
+        "VAD": "snakers4/silero-vad",
     }
 
     @staticmethod
@@ -109,6 +112,13 @@ class ModelManager:
                 local_files_only=False,
                 allow_patterns=["yamnet.onnx", "yamnet_class_map.csv"],
             )
+        elif quality_tier == "VAD":
+            model_path = snapshot_download(
+                repo_id=identifier,
+                cache_dir=cache_dir,
+                local_files_only=False,
+                allow_patterns=["silero_vad.onnx"],
+            )
         elif quality_tier == "LLM":
             model_path = snapshot_download(
                 repo_id=identifier,
@@ -146,6 +156,13 @@ class ModelManager:
                     cache_dir=cache_dir,
                     local_files_only=True,
                     allow_patterns=["yamnet.onnx", "yamnet_class_map.csv"],
+                )
+            elif quality_tier == "VAD":
+                path = snapshot_download(
+                    repo_id=identifier,
+                    cache_dir=cache_dir,
+                    local_files_only=True,
+                    allow_patterns=["silero_vad.onnx"],
                 )
             elif quality_tier == "LLM":
                 path = snapshot_download(
@@ -192,7 +209,7 @@ class ModelManager:
                 print(f"  Error downloading {repo_id}: {e}")
 
         # Hub models shared across all tiers
-        hub_keys = ["YAMNet", "NER", "LLM", "Translation", "Segmentation"]
+        hub_keys = ["YAMNet", "NER", "LLM", "Translation", "Segmentation", "VAD"]
         for key in hub_keys:
             repo_id = cls.MODELS[key]
             cache_dir = cls._get_cache_dir(key)
@@ -204,6 +221,13 @@ class ModelManager:
                         cache_dir=cache_dir,
                         tqdm_class=tqdm,
                         allow_patterns=["yamnet.onnx", "yamnet_class_map.csv"],
+                    )
+                elif key == "VAD":
+                    snapshot_download(
+                        repo_id=repo_id,
+                        cache_dir=cache_dir,
+                        tqdm_class=tqdm,
+                        allow_patterns=["silero_vad.onnx"],
                     )
                 elif key == "LLM":
                     snapshot_download(
@@ -244,7 +268,7 @@ class ModelManager:
             except Exception:
                 result[f"whisper_{whisper_size}"] = False
 
-        hub_keys = ["YAMNet", "NER", "LLM", "Translation", "Segmentation"]
+        hub_keys = ["YAMNet", "NER", "LLM", "Translation", "Segmentation", "VAD"]
         for key in hub_keys:
             repo_id = cls.MODELS[key]
             cache_dir = cls._get_cache_dir(key)
@@ -255,6 +279,13 @@ class ModelManager:
                         cache_dir=cache_dir,
                         local_files_only=True,
                         allow_patterns=["yamnet.onnx", "yamnet_class_map.csv"],
+                    )
+                elif key == "VAD":
+                    snapshot_download(
+                        repo_id=repo_id,
+                        cache_dir=cache_dir,
+                        local_files_only=True,
+                        allow_patterns=["silero_vad.onnx"],
                     )
                 elif key == "LLM":
                     snapshot_download(
