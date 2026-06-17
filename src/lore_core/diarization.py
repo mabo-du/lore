@@ -63,7 +63,7 @@ class DiarizationEngine:
         No PyTorch dependency.
         """
         from utils.model_manager import ModelManager
-        from lore_core.vad import SileroVAD, SAMPLE_RATE
+        from lore_core.vad import SileroVAD
         from lore_core.embedding import SpeakerEmbedding
         from lore_core.clustering import SpeakerClustering
         import wave
@@ -95,12 +95,12 @@ class DiarizationEngine:
                 continue
             emb = embedder.extract(segment)
             embeddings.append(emb)
-            start_s = start_sample / SAMPLE_RATE
-            end_s = end_sample / SAMPLE_RATE
+            start_s = start_sample / rate
+            end_s = end_sample / rate
             region_times.append((start_s, end_s))
 
         if not embeddings:
-            return [(0.0, len(audio) / SAMPLE_RATE, "SPEAKER_00")]
+            return [(0.0, len(audio) / rate, "SPEAKER_00")]
 
         # Step 3: Cluster embeddings into speaker labels
         clusterer = SpeakerClustering(n_speakers=self.num_speakers)
