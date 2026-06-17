@@ -13,11 +13,13 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QCheckBox,
     QSlider,
+    QAbstractItemView,
 )
 from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal
 from PyQt6.QtMultimedia import QMediaPlayer
 from .file_picker import FilePickerWidget
 from .waveform_widget import WaveformWidget
+from .overlap_strip import OverlapStripWidget
 from .transcript_widget import TranscriptWidget
 from .metadata_widget import MetadataWidget
 from audio.normalise import normalise
@@ -156,11 +158,12 @@ class MainWindow(QMainWindow):
         toolbar_layout.addWidget(self.btn_settings)
 
         tc_layout.addLayout(toolbar_layout)
-        tc_layout.addWidget(self.transcript_view)
 
         # Audio Player and Waveform
         self.waveform = WaveformWidget()
         self.waveform.seek_requested.connect(self.audio_player.seek)
+        self.overlap_strip = OverlapStripWidget()
+        self.overlap_strip.overlap_clicked.connect(self._on_overlap_strip_clicked)
 
         control_layout = QHBoxLayout()
         self.play_btn = QPushButton("Play")
@@ -186,6 +189,8 @@ class MainWindow(QMainWindow):
         control_layout.addWidget(self.waveform, stretch=1)
 
         tc_layout.addLayout(control_layout)
+        tc_layout.addWidget(self.overlap_strip)
+        tc_layout.addWidget(self.transcript_view)
 
         # Metadata area
         self.metadata_form = MetadataWidget()
@@ -428,6 +433,14 @@ class MainWindow(QMainWindow):
         # Load audio into player & waveform
         self.audio_player.load(str(self.working_audio_path))
         self.waveform.load_audio(str(self.working_audio_path))
+
+        # Populate overlap strip
+        transcript = self.transcript_model.get_transcript()
+        self.overlap_strip.set_regions(
+            transcript.overlap_regions,
+            transcript.metadata.duration_ms,
+        )
+
         self.stack.setCurrentIndex(2)  # Editor page
         self.btn_transcribe.setEnabled(True)
 
@@ -450,6 +463,15 @@ class MainWindow(QMainWindow):
             count = len(overlap_regions)
             total_s = sum(r.end_ms - r.start_ms for r in overlap_regions) / 1000.0
             print(f"Overlap: {count} region(s), {total_s:.1f}s total")
+
+    def _on_overlap_strip_clicked(self, ms: int):
+        """Scroll the transcript to the segment containing the clicked time."""
+        idx = self.transcript_model.segment_index_at(ms)
+        if idx is not None:
+            self.transcript_view.scrollTo(
+                idx, QAbstractItemView.ScrollHint.PositionAtCenter
+            )
+            self.transcript_view.setCurrentIndex(idx)
 
     def _on_transcription_error(self, err_msg: str):
         self.status_label.setText(f"Transcription Error:\n{err_msg}")
