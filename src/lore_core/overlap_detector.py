@@ -64,13 +64,18 @@ class OverlapDetector:
     Phase 1 of the incremental overlap strategy. Detects *when* overlap
     occurs without resolving *who* is speaking (Phase 3).
 
+    Uses Average Stitching (center-weighted average across sliding windows)
+    to produce smooth frame-level scores without hard boundary cutoffs.
+    Based on the pyannote-onnx-extended technique (Apache 2.0, ref).
+
     Loads the model lazily on first call to detect().
     """
 
-    def __init__(self, threshold: float = 0.3):
+    def __init__(self, threshold: float = 0.3, average_stitch: bool = True):
         self.threshold = threshold
         self._session = None
         self._input_name = None
+        self.average_stitch = average_stitch
 
     # ── Model loading ────────────────────────────────────────────────────
 
@@ -140,8 +145,9 @@ class OverlapDetector:
         total_frames = int(total_samples / SAMPLE_RATE / FRAME_LENGTH_S) + 1
 
         # Per-frame overlap accumulator (works in frame-index space)
-        overlap_accum = np.zeros(total_frames, dtype=np.float32)
-        window_count = np.zeros(total_frames, dtype=np.int32)
+        # Average Stitching: weighted accumulation with center-of-window weighting
+        overlap_sum = np.zeros(total_frames, dtype=np.float64)
+        weight_sum = np.zeros(total_frames, dtype=np.float64)
 
         # Slide over the audio
         for start in range(0, total_samples - window_samples + 1, step_samples):
@@ -159,13 +165,29 @@ class OverlapDetector:
             # overlap_score is now (n_frames,) in [0, 1] indicating how
             # strongly the model thinks this frame contains overlap.
 
+            n_window_frames = len(overlap_score)
             # Map window-local frame index to global frame index
             global_offset = start // step_samples * (window_samples // step_samples)
             for local_idx, score in enumerate(overlap_score):
                 gf = global_offset + local_idx
                 if gf < total_frames:
-                    overlap_accum[gf] = max(overlap_accum[gf], score)
-                    window_count[gf] += 1
+                    if self.average_stitch:
+                        # Center-weighted: frames near window center get more weight
+                        center = n_window_frames / 2.0
+                        weight = 1.0 - abs(local_idx - center) / center
+                        weight = max(weight, 0.0)
+                        overlap_sum[gf] += score * weight
+                        weight_sum[gf] += weight
+                    else:
+                        overlap_sum[gf] = max(overlap_sum[gf], score)
+                        weight_sum[gf] = 1.0
+
+        # Normalize: weighted average, with fallback to 0
+        overlap_accum = np.divide(
+            overlap_sum, weight_sum,
+            out=np.zeros_like(overlap_sum, dtype=np.float32),
+            where=weight_sum > 0,
+        )
 
         # Merge contiguous high-confidence frames into regions
         regions = []
@@ -173,7 +195,7 @@ class OverlapDetector:
         region_start = 0
 
         for frame_idx in range(total_frames):
-            is_overlap = overlap_accum[frame_idx] > self.threshold and window_count[frame_idx] > 0
+            is_overlap = overlap_accum[frame_idx] > self.threshold
 
             if is_overlap and not in_overlap:
                 in_overlap = True
