@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 from pathlib import Path
 import numpy as np
 
-from lore_core.vad import SileroVAD, SAMPLE_RATE
+from lore_core.vad import SileroVAD
 
 
 def test_load_model():
