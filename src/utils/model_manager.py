@@ -1,6 +1,7 @@
 from pathlib import Path
 import platformdirs
 from huggingface_hub import snapshot_download
+from tqdm.auto import tqdm
 
 
 class ModelManager:
@@ -15,6 +16,21 @@ class ModelManager:
     # This is more maintainable than tracking community CTranslate2 repos
     # and will automatically pick up official Systran releases when available.
     WHISPER_SIZES = {
+        "Fast": "small",
+        "Balanced": "medium",
+        "Best Quality": "turbo",
+    }
+
+    # Whisper HF repo IDs — hardcoded to avoid depending on faster-whisper's
+    # private _MODELS dict and to bypass its disabled_tqdm wrapper.
+    WHISPER_REPO_IDS = {
+        "small": "Systran/faster-whisper-small",
+        "medium": "Systran/faster-whisper-medium",
+        "turbo": "mobiuslabsgmbh/faster-whisper-large-v3-turbo",
+    }
+
+    # Maps Settings UI tier names to Whisper size strings
+    _TIER_TO_WHISPER = {
         "Fast": "small",
         "Balanced": "medium",
         "Best Quality": "turbo",
@@ -52,6 +68,16 @@ class ModelManager:
         models_dir = base / "models" / "ner"
         models_dir.mkdir(parents=True, exist_ok=True)
         return models_dir
+
+    @staticmethod
+    def _get_cache_dir(model_key: str) -> Path:
+        """
+        Returns the appropriate cache directory for a model key.
+        NER/LLM/Translation use their own cache dir; others share the default.
+        """
+        if model_key in ("NER", "LLM", "Translation"):
+            return ModelManager.get_ner_cache_dir()
+        return ModelManager.get_cache_dir()
 
     @classmethod
     def ensure_model(cls, quality_tier: str = "Best Quality") -> str:
@@ -135,3 +161,116 @@ class ModelManager:
             return Path(path)
         except Exception:
             return None
+
+    @classmethod
+    def prefetch(cls, quality_tier: str, progress_callback=None):
+        """Downloads all models for the given quality tier.
+
+        Downloads the Whisper model for this tier plus all shared hub models
+        (YAMNet, NER, LLM, Translation, Segmentation). Prints progress headers
+        and handles errors per model without aborting the batch.
+        """
+        whisper_size = cls._TIER_TO_WHISPER.get(quality_tier)
+
+        if whisper_size:
+            repo_id = cls.WHISPER_REPO_IDS[whisper_size]
+            print(f"Downloading Whisper ({whisper_size})...")
+            try:
+                snapshot_download(
+                    repo_id=repo_id,
+                    cache_dir=cls.get_cache_dir(),
+                    tqdm_class=tqdm,
+                    allow_patterns=[
+                        "config.json",
+                        "preprocessor_config.json",
+                        "model.bin",
+                        "tokenizer.json",
+                        "vocabulary.*",
+                    ],
+                )
+            except Exception as e:
+                print(f"  Error downloading {repo_id}: {e}")
+
+        # Hub models shared across all tiers
+        hub_keys = ["YAMNet", "NER", "LLM", "Translation", "Segmentation"]
+        for key in hub_keys:
+            repo_id = cls.MODELS[key]
+            cache_dir = cls._get_cache_dir(key)
+            print(f"Downloading {key}...")
+            try:
+                if key == "YAMNet":
+                    snapshot_download(
+                        repo_id=repo_id,
+                        cache_dir=cache_dir,
+                        tqdm_class=tqdm,
+                        allow_patterns=["yamnet.onnx", "yamnet_class_map.csv"],
+                    )
+                elif key == "LLM":
+                    snapshot_download(
+                        repo_id=repo_id,
+                        cache_dir=cache_dir,
+                        tqdm_class=tqdm,
+                        allow_patterns=["*q4_k_m.gguf"],
+                    )
+                else:
+                    snapshot_download(
+                        repo_id=repo_id,
+                        cache_dir=cache_dir,
+                        tqdm_class=tqdm,
+                    )
+            except Exception as e:
+                print(f"  Error downloading {repo_id}: {e}")
+
+    @classmethod
+    def prefetch_status(cls, quality_tier: str) -> dict[str, bool]:
+        """Returns {model_name: is_cached} for all models in the given tier.
+
+        Checks Whisper via snapshot_download with local_files_only=True and
+        hub models via the same pattern as get_model_path(). Never raises.
+        """
+        result: dict[str, bool] = {}
+        whisper_size = cls._TIER_TO_WHISPER.get(quality_tier)
+
+        if whisper_size:
+            repo_id = cls.WHISPER_REPO_IDS[whisper_size]
+            try:
+                snapshot_download(
+                    repo_id=repo_id,
+                    cache_dir=cls.get_cache_dir(),
+                    local_files_only=True,
+                    allow_patterns=["model.bin"],
+                )
+                result[f"whisper_{whisper_size}"] = True
+            except Exception:
+                result[f"whisper_{whisper_size}"] = False
+
+        hub_keys = ["YAMNet", "NER", "LLM", "Translation", "Segmentation"]
+        for key in hub_keys:
+            repo_id = cls.MODELS[key]
+            cache_dir = cls._get_cache_dir(key)
+            try:
+                if key == "YAMNet":
+                    snapshot_download(
+                        repo_id=repo_id,
+                        cache_dir=cache_dir,
+                        local_files_only=True,
+                        allow_patterns=["yamnet.onnx", "yamnet_class_map.csv"],
+                    )
+                elif key == "LLM":
+                    snapshot_download(
+                        repo_id=repo_id,
+                        cache_dir=cache_dir,
+                        local_files_only=True,
+                        allow_patterns=["*q4_k_m.gguf"],
+                    )
+                else:
+                    snapshot_download(
+                        repo_id=repo_id,
+                        cache_dir=cache_dir,
+                        local_files_only=True,
+                    )
+                result[key] = True
+            except Exception:
+                result[key] = False
+
+        return result
