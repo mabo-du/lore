@@ -365,6 +365,10 @@ class MainWindow(QMainWindow):
         self.working_audio_path = Path(wav_path)
         self.status_label.setText("Preparing transcription engine...")
 
+        # Clear previous overlap data before starting a new transcription
+        self.transcript_model.get_transcript().overlap_regions.clear()
+        self.overlap_strip.set_regions([], 0)
+
         settings = QSettings("HeritageTools", "Lore")
         enable_diarization = settings.value("diarization/enabled", False, type=bool)
         use_pyannote = settings.value("diarization/use_pyannote", False, type=bool)
@@ -492,6 +496,8 @@ class MainWindow(QMainWindow):
                 old.wait(2000)
 
         self.transcript_model.clear_segments()
+        self.transcript_model.get_transcript().overlap_regions.clear()
+        self.overlap_strip.set_regions([], 0)
         self.original_audio_path = None
         self.working_audio_path = None
         self.stack.setCurrentIndex(0)
