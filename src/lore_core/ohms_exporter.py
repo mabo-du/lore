@@ -125,11 +125,17 @@ class OhmsExporter:
         for seg in transcript.segments:
             start = _format_vtt_time(seg.start_ms / 1000.0)
             end = _format_vtt_time(seg.end_ms / 1000.0)
+            seg_text = seg.text
+            # Append [overlap] if segment intersects any OverlapRegion
+            for region in transcript.overlap_regions:
+                if region.start_ms < seg.end_ms and region.end_ms > seg.start_ms:
+                    seg_text += " [overlap]"
+                    break
             vtt_content += f"{start} --> {end}\n"
             if seg.speaker_label:
-                vtt_content += f"<v {seg.speaker_label}>{seg.text}\n\n"
+                vtt_content += f"<v {seg.speaker_label}>{seg_text}\n\n"
             else:
-                vtt_content += f"{seg.text}\n\n"
+                vtt_content += f"{seg_text}\n\n"
 
         vtt_transcript.text = etree.CDATA(vtt_content.strip())
 
@@ -141,9 +147,13 @@ class OhmsExporter:
             for seg in transcript.segments:
                 start = _format_vtt_time(seg.start_ms / 1000.0)
                 end = _format_vtt_time(seg.end_ms / 1000.0)
-                vtt_alt_content += f"{start} --> {end}\n"
-
                 text = seg.translation if seg.translation else seg.text
+                # Append [overlap] if segment intersects any OverlapRegion
+                for region in transcript.overlap_regions:
+                    if region.start_ms < seg.end_ms and region.end_ms > seg.start_ms:
+                        text += " [overlap]"
+                        break
+                vtt_alt_content += f"{start} --> {end}\n"
                 if seg.speaker_label:
                     vtt_alt_content += f"<v {seg.speaker_label}>{text}\n\n"
                 else:
