@@ -1,6 +1,6 @@
 """Tests for ModelManager prefetch and status."""
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from utils.model_manager import ModelManager
 
 
