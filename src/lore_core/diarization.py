@@ -5,8 +5,15 @@ from typing import List, Tuple, Optional
 
 
 class DiarizationEngine:
-    def __init__(self, use_pyannote: bool = False, hf_token: Optional[str] = None, num_speakers: int = 2):
+    def __init__(
+        self,
+        use_pyannote: bool = False,
+        use_onnx: bool = False,
+        hf_token: Optional[str] = None,
+        num_speakers: int = 2,
+    ):
         self.use_pyannote = use_pyannote
+        self.use_onnx = use_onnx
         self.hf_token = hf_token
         self.num_speakers = num_speakers
 
@@ -15,6 +22,8 @@ class DiarizationEngine:
         Runs diarization on the given audio file.
         Returns a list of (start_s, end_s, speaker_label) tuples.
         """
+        if self.use_onnx:
+            return self._run_onnx(audio_path)
         if self.use_pyannote:
             return self._run_pyannote(audio_path)
         else:
@@ -45,6 +54,71 @@ class DiarizationEngine:
         results = []
         for turn, _, speaker in diarization.itertracks(yield_label=True):
             results.append((turn.start, turn.end, speaker))
+
+        return results
+
+    def _run_onnx(self, audio_path: Path) -> List[Tuple[float, float, str]]:
+        """
+        Pure ONNX diarization path: Silero VAD → WeSpeaker embedding → spectral clustering.
+        No PyTorch dependency.
+        """
+        from utils.model_manager import ModelManager
+        from lore_core.vad import SileroVAD, SAMPLE_RATE
+        from lore_core.embedding import SpeakerEmbedding
+        from lore_core.clustering import SpeakerClustering
+        import wave
+        import numpy as np
+
+        # Read audio
+        with wave.open(str(audio_path), "rb") as wf:
+            rate = wf.getframerate()
+            raw = wf.readframes(wf.getnframes())
+
+        audio = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+
+        # Step 1: VAD to find speech regions
+        vad_model_dir = ModelManager.ensure_model("VAD")
+        vad = SileroVAD()
+        vad.load(Path(vad_model_dir) / "silero_vad.onnx")
+        speech_regions = vad.detect_speech_regions(audio)
+
+        # Step 2: Extract embeddings for each speech region
+        we_model_dir = ModelManager.ensure_model("WeSpeaker")
+        embedder = SpeakerEmbedding()
+        embedder.load(Path(we_model_dir) / "model.onnx")
+
+        embeddings = []
+        region_times = []
+        for start_sample, end_sample in speech_regions:
+            segment = audio[start_sample:end_sample]
+            if len(segment) < 1600:  # Skip segments shorter than 100ms
+                continue
+            emb = embedder.extract(segment)
+            embeddings.append(emb)
+            start_s = start_sample / SAMPLE_RATE
+            end_s = end_sample / SAMPLE_RATE
+            region_times.append((start_s, end_s))
+
+        if not embeddings:
+            return [(0.0, len(audio) / SAMPLE_RATE, "SPEAKER_00")]
+
+        # Step 3: Cluster embeddings into speaker labels
+        clusterer = SpeakerClustering(n_speakers=self.num_speakers)
+        labels = clusterer.cluster(np.array(embeddings))
+
+        # Step 4: Build results
+        results = []
+        for (start_s, end_s), label in zip(region_times, labels):
+            speaker = f"SPEAKER_{label:02d}"
+            # Merge contiguous segments with same speaker
+            if (
+                results
+                and results[-1][2] == speaker
+                and (start_s - results[-1][1] < 0.5)
+            ):
+                results[-1] = (results[-1][0], end_s, speaker)
+            else:
+                results.append((start_s, end_s, speaker))
 
         return results
 
