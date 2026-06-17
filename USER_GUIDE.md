@@ -9,6 +9,7 @@ Welcome to Lore! This guide will walk you through the end-to-end process of tran
 4. [Transcription & Diarization](#transcription--diarization)
 5. [Translation](#translation)
 6. [Editing and Review](#editing-and-review)
+   - [Overlapping Speech](#overlapping-speech)
 7. [Metadata & Archival Export](#metadata--archival-export)
 8. [Global Search](#global-search)
 
@@ -99,6 +100,15 @@ AI is powerful, but it makes mistakes. Lore provides tools to quickly review and
 - **Audio Sync:** Click on any text segment in the transcript, and the audio waveform at the top of the screen will instantly seek to that exact timestamp. Press the Play button to listen.
 - **Editing:** Double-click any segment to modify the text or correct a speaker label.
 - **Load a New File:** Click the **📂 New File** button on the toolbar to return to the file picker and open a different audio file without restarting the app.
+
+### Overlapping Speech
+
+Lore automatically detects when two or more speakers talk simultaneously using a lightweight ONNX model (6 MB, no GPU required). Overlap information is presented in two ways:
+
+- **Overlap strip** — a thin horizontal bar between the waveform and the transcript view shows coloured blocks where overlap was detected. Click any block to jump directly to that moment in the transcript.
+- **Segment badges** — transcript segments that overlap with a detected region display a subtle `⟪ overlap ⟫` badge and a warm amber left-border indicator. Overlaps in oral history are common (backchannels, affirmations), so the visual weight is kept low and informational.
+
+Overlap detection runs automatically during transcription. No configuration needed.
 
 ## 7. Metadata & Archival Export
 

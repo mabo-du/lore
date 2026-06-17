@@ -1,3 +1,21 @@
+## [0.1.6] — 2026-06-17
+
+### Added
+- **Overlap UI surfacing (Phase 2)** — Three visual surfaces now expose overlapping-speech information from the Phase 1 ONNX detection pipeline:
+  - **Overlap region strip** — a thin horizontal bar between the waveform and transcript view rendering coloured blocks proportional to each `OverlapRegion`'s time range. Click a block to scroll the transcript to the corresponding segment. Warm amber (`#c8925e`) on dark background — low-alarm, informational weight.
+  - **Per-segment overlap badge** — segments that overlap with a detected region get a 4px tinted left border and a `⟪ overlap ⟫` pill badge next to the timestamp, following the existing confidence-badge pattern. The `_draw_badge()` helper was extracted to eliminate badge-rendering duplication.
+  - **Inline `[overlap]` VTT annotation** — OHMS WebVTT export appends `[overlap]` to cue text for segments that intersect any OverlapRegion, in both primary and translation VTT blocks.
+- **`OverlapRole` model constant** (`UserRole + 8`) — `TranscriptListModel` exposes binary overlap presence via `data(index, OverlapRole)` for the delegate, plus `segment_index_at(ms)` public method for click-to-scroll.
+- **Overlap-aware size hinting** — `TranscriptDelegate.sizeHint()` accounts for the overlap badge width to prevent text overflow.
+- **22 new tests** — `test_overlap_model.py` (16 tests: segment overlap detection, index lookups, role integration), `test_overlap_strip.py` (5 tests: widget geometry, click emission, empty state), `test_ohms_export.py` (1 test: VTT overlap annotation).
+
+### Fixed
+- **Stale overlap data across sessions** — `overlap_regions` and the overlap strip are now cleared on `New File` and `Audio Ready` to prevent phantom blocks from the previous transcription.
+
+### Changed
+- **`TranscriptListModel`** — now tracked in git (was previously excluded by the `models/` gitignore rule intended for ML weight directories).
+- **`TranscriptDelegate.paint()`** — badge rendering logic extracted to `_draw_badge()` helper for maintainability; overlap border accounted for in `left_offset` calculation.
+
 ## [0.1.5] — 2026-06-16
 
 ### Added
