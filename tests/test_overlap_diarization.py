@@ -1,8 +1,6 @@
 """Tests for two-stage overlap-aware clustering (Phase 2d)."""
 
 import numpy as np
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 
 def test_overlap_ratio_threshold_constant():
