@@ -290,8 +290,9 @@ class MainWindow(QMainWindow):
         self.classifier_worker.event_detected.connect(self.transcript_model.add_segment)
         self.classifier_worker.error.connect(lambda e: print(f"Classifier error: {e}"))
 
-        # Start NER Worker
-        self.ner_worker = NERWorker()
+        # Start NER Worker with backchannel logging toggle
+        bc_logging = settings.value("backchannel/logging_enabled", True, type=bool)
+        self.ner_worker = NERWorker(logging_enabled=bc_logging)
         self.worker.segment_completed.connect(
             self.ner_worker.enqueue_segment, Qt.ConnectionType.QueuedConnection
         )
@@ -304,7 +305,7 @@ class MainWindow(QMainWindow):
         self.ner_worker.start()
         self.classifier_worker.start()
         self.worker.start()
-
+    
     def start_translation(self):
         if not self.transcript_model.get_transcript().segments:
             QMessageBox.warning(
@@ -433,8 +434,9 @@ class MainWindow(QMainWindow):
             lambda e: print(f"Classifier error: {e}")
         )
 
-        # Start NER Worker
-        self.ner_worker = NERWorker()
+        # Start NER Worker with backchannel logging toggle
+        bc_logging = settings.value("backchannel/logging_enabled", True, type=bool)
+        self.ner_worker = NERWorker(logging_enabled=bc_logging)
         self.worker.segment_completed.connect(
             self.ner_worker.enqueue_segment, Qt.ConnectionType.QueuedConnection
         )

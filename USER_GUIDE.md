@@ -133,6 +133,19 @@ Lore automatically detects when two or more speakers talk simultaneously using a
 
 Overlap detection runs automatically during transcription. No configuration needed.
 
+### Backchannel Data Logging
+
+Lore can optionally log rule-based backchannel detection decisions to a local JSONL
+file at `~/.local/share/heritage-tools/backchannel-log.jsonl`. This data is intended
+to train a future acoustic backchannel classifier (Stage 2). The feature is enabled by
+default and can be disabled in **Settings → Offline & Pre-fetch → Backchannel data
+logging (local only)**.
+
+**Privacy:** The log is purely local — no data ever leaves your machine. It records
+only timestamps, durations, and text of transcribed segments that the rule classifier
+evaluated, along with whether each was classified as a backchannel. No audio, no
+speaker embeddings, and no network requests are involved.
+
 ## 8. Metadata & Archival Export
 
 Lore is built for archival standards. On the right side of the screen, you will find the **Metadata Form**.

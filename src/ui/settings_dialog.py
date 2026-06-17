@@ -115,6 +115,23 @@ class SettingsDialog(QDialog):
         offline_layout.addWidget(self.prefetch_btn)
         offline_layout.addWidget(self.prefetch_status)
 
+        # Backchannel data logging
+        offline_layout.addSpacing(8)
+        self.backchannel_log_checkbox = QCheckBox(
+            "Backchannel data logging (local only)"
+        )
+        self.backchannel_log_checkbox.setChecked(True)
+        offline_layout.addWidget(self.backchannel_log_checkbox)
+
+        log_desc = QLabel(
+            "Records rule-based backchannel decisions to a local log file for future "
+            "classifier training. All data stays on your machine. Disable for sensitive "
+            "recordings."
+        )
+        log_desc.setWordWrap(True)
+        log_desc.setStyleSheet("color: gray; font-size: 11px;")
+        offline_layout.addWidget(log_desc)
+
         layout.addWidget(offline_group)
 
         # Buttons
@@ -176,6 +193,9 @@ class SettingsDialog(QDialog):
         offline_enabled = self.settings.value("offline/enabled", False, type=bool)
         self.offline_checkbox.setChecked(offline_enabled)
 
+        bc_logging = self.settings.value("backchannel/logging_enabled", True, type=bool)
+        self.backchannel_log_checkbox.setChecked(bc_logging)
+
     def save_settings(self):
         if self.radio_pyannote.isChecked() and not self.token_input.text().strip():
             QMessageBox.warning(
@@ -203,5 +223,8 @@ class SettingsDialog(QDialog):
         )
         self.settings.setValue(
             "offline/enabled", self.offline_checkbox.isChecked()
+        )
+        self.settings.setValue(
+            "backchannel/logging_enabled", self.backchannel_log_checkbox.isChecked()
         )
         self.accept()
