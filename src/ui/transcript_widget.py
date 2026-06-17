@@ -193,7 +193,6 @@ class TranscriptDelegate(QStyledItemDelegate):
 
         # Convert QColor to hex string for inline CSS
         text_hex = text_color.name()
-        text_alpha = text_color.alpha()
 
         if words:
             html_words = []

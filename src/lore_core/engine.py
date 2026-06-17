@@ -27,6 +27,8 @@ class TranscriptionEngine:
         """
         Yields Segments as they are transcribed.
 
+        Sets self.audio_duration_s after transcribe() returns, for progress tracking.
+
         Rules:
             - Must capture avg_logprob, compression_ratio, no_speech_prob
               from each faster-whisper segment for anomaly detection.
@@ -37,13 +39,14 @@ class TranscriptionEngine:
         # condition_on_previous_text=False prevents hallucination loops in silent/noisy parts
         # vad_filter=True avoids transcribing ambient noise
         # word_timestamps=True enables word-level confidence scoring
-        segments_gen, _info = self._model.transcribe(
+        segments_gen, info = self._model.transcribe(
             str(audio_path),
             vad_filter=True,
             condition_on_previous_text=False,
             word_timestamps=True,
             initial_prompt=initial_prompt if initial_prompt else None,
         )
+        self.audio_duration_s = info.duration
 
         for s in segments_gen:
             word_dicts = []

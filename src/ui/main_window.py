@@ -14,9 +14,10 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QCheckBox,
     QSlider,
+    QProgressBar,
     QAbstractItemView,
 )
-from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtMultimedia import QMediaPlayer
 from .file_picker import FilePickerWidget
 from .waveform_widget import WaveformWidget
@@ -100,6 +101,15 @@ class MainWindow(QMainWindow):
         self.status_label = QLabel("Initializing...")
         self.status_label.setStyleSheet("font-size: 16px; font-weight: bold;")
         status_layout.addWidget(self.status_label)
+
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setFixedWidth(400)
+        self.progress_bar.hide()
+        status_layout.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignCenter)
+
         self.stack.addWidget(self.status_page)
 
         # Page 3: Main Editor
@@ -244,6 +254,8 @@ class MainWindow(QMainWindow):
 
         self.btn_transcribe.setEnabled(False)
         self.status_label.setText("Initializing model...")
+        self.progress_bar.setValue(0)
+        self.progress_bar.show()
         self.transcript_model.clear_segments()
 
         custom_vocab = settings.value("transcription/custom_vocab", "")
@@ -266,6 +278,7 @@ class MainWindow(QMainWindow):
         )
 
         self.worker.status_changed.connect(self.status_label.setText)
+        self.worker.progress_changed.connect(self._on_transcription_progress)
         self.worker.segment_completed.connect(self.transcript_model.add_segment)
         self.worker.diarization_completed.connect(self.transcript_model.update_segments)
         self.worker.overlap_detected.connect(self._on_overlap_detected)
@@ -399,6 +412,7 @@ class MainWindow(QMainWindow):
             num_speakers=num_speakers,
         )
         self.worker.status_changed.connect(self.status_label.setText)
+        self.worker.progress_changed.connect(self._on_transcription_progress)
         self.worker.segment_completed.connect(self.transcript_model.add_segment)
         self.worker.diarization_completed.connect(
             self.transcript_model.update_segments
@@ -406,6 +420,9 @@ class MainWindow(QMainWindow):
         self.worker.overlap_detected.connect(self._on_overlap_detected)
         self.worker.finished.connect(self._on_transcription_finished)
         self.worker.error.connect(self._on_transcription_error)
+
+        self.progress_bar.setValue(0)
+        self.progress_bar.show()
 
         # Start Audio Classifier worker in parallel
         self.classifier_worker = AudioClassifyWorker(self.working_audio_path)
@@ -434,6 +451,8 @@ class MainWindow(QMainWindow):
         self.worker.start()
 
     def _on_transcription_finished(self):
+        self.progress_bar.hide()
+
         # Sync diarization checkbox from saved preferences
         settings = QSettings("HeritageTools", "Lore")
         self.chk_diarize.setChecked(settings.value("diarization/enabled", False, type=bool))
@@ -467,6 +486,10 @@ class MainWindow(QMainWindow):
             self.rag_worker.start()
         except Exception as e:
             print(f"Failed to start RAGWorker: {e}")
+
+    def _on_transcription_progress(self, fraction: float):
+        """Update the progress bar as transcription proceeds."""
+        self.progress_bar.setValue(int(fraction * 100))
 
     def _on_overlap_detected(self, overlap_regions):
         """Store detected overlap regions in the transcript model."""

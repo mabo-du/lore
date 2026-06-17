@@ -2,7 +2,7 @@ from pathlib import Path
 from PyQt6.QtCore import QThread, pyqtSignal
 from utils.model_manager import ModelManager
 from lore_core.engine import TranscriptionEngine
-from models.transcript import Segment, OverlapRegion
+from models.transcript import Segment
 
 
 class TranscriptionWorker(QThread):
@@ -13,6 +13,7 @@ class TranscriptionWorker(QThread):
 
     # Signals
     status_changed = pyqtSignal(str)  # E.g. "Downloading model...", "Transcribing..."
+    progress_changed = pyqtSignal(float)  # 0.0 to 1.0 — transcription progress
     segment_completed = pyqtSignal(Segment)  # Emitted as each segment is yielded
     diarization_completed = pyqtSignal(
         list
@@ -59,6 +60,7 @@ class TranscriptionWorker(QThread):
 
             all_segments = []
             last_end_ms = 0
+            audio_duration_s = getattr(engine, 'audio_duration_s', None)
 
             # transcribe() yields segments generator
             for segment in engine.transcribe(
@@ -79,6 +81,11 @@ class TranscriptionWorker(QThread):
                 all_segments.append(segment)
                 self.segment_completed.emit(segment)
                 last_end_ms = segment.end_ms
+
+                # Emit progress 0.0–1.0 based on how far through the audio we are
+                if audio_duration_s and audio_duration_s > 0:
+                    progress = min(segment.end_ms / 1000.0 / audio_duration_s, 1.0)
+                    self.progress_changed.emit(progress)
 
             if self.enable_diarization:
                 self.status_changed.emit("Running Speaker Diarization...")
