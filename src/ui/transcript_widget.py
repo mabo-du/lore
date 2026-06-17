@@ -52,6 +52,34 @@ class TranscriptDelegate(QStyledItemDelegate):
         "unknown": {"border": None, "badge": None, "badge_bg": None, "text_alpha": 255},
     }
 
+    # Overlap indicator style (same colour family as OverlapStripWidget)
+    OVERLAP_COLOR = QColor("#c8925e")
+    OVERLAP_BADGE_BG = QColor("#3d3020")
+    OVERLAP_BADGE_TEXT = "⟪ overlap ⟫"
+
+    def _draw_badge(self, painter, font, text, text_color, bg_color,
+                     left_anchor_x, top_anchor_y, time_header_height):
+        """Draw a rounded pill badge returning the x-anchor for the next badge."""
+        badge_font = QFont(font)
+        badge_font.setPointSize(8)
+        badge_font.setBold(True)
+        painter.setFont(badge_font)
+        fm = QFontMetrics(badge_font)
+        badge_width = fm.horizontalAdvance(text) + 12
+        badge_height = fm.height() + 4
+        badge_rect = QRect(
+            left_anchor_x,
+            top_anchor_y + (time_header_height - badge_height) // 2,
+            badge_width,
+            badge_height,
+        )
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(bg_color)
+        painter.drawRoundedRect(badge_rect, 4, 4)
+        painter.setPen(text_color)
+        painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, text)
+        return left_anchor_x + badge_width + 10
+
     def paint(
         self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
     ):
@@ -69,6 +97,7 @@ class TranscriptDelegate(QStyledItemDelegate):
         style = self.CONFIDENCE_STYLES.get(
             confidence, self.CONFIDENCE_STYLES["unknown"]
         )
+        is_overlap = bool(index.data(index.model().OverlapRole))
 
         time_str = f"[{self._format_time(start_ms)} - {self._format_time(end_ms)}]"
         if speaker:
@@ -93,8 +122,18 @@ class TranscriptDelegate(QStyledItemDelegate):
                 QColor(border_color),
             )
 
+        # Overlap left-border indicator (drawn on top of confidence border)
+        if is_overlap:
+            painter.fillRect(
+                option.rect.left(),
+                option.rect.top(),
+                4,
+                option.rect.height(),
+                self.OVERLAP_COLOR,
+            )
+
         # Adjust rect for content (with extra left margin if bordered)
-        left_offset = 8 if border_color else 0
+        left_offset = 8 if border_color or is_overlap else 0
         rect = option.rect.adjusted(
             self.margins + left_offset, self.margins, -self.margins, -self.margins
         )
@@ -116,27 +155,22 @@ class TranscriptDelegate(QStyledItemDelegate):
         painter.drawText(rect.left(), rect.top() + fm.ascent(), time_str)
 
         # Draw confidence badge (pill) next to timestamp
+        next_badge_x = rect.left() + time_rect.width() + 10  # anchor for next badge
         badge_text = style["badge"]
         if badge_text:
-            badge_font = QFont(font)
-            badge_font.setPointSize(8)
-            badge_font.setBold(True)
-            painter.setFont(badge_font)
-            badge_fm = QFontMetrics(badge_font)
-            badge_width = badge_fm.horizontalAdvance(badge_text) + 12
-            badge_height = badge_fm.height() + 4
-            badge_x = rect.left() + time_rect.width() + 10
-            badge_y = rect.top() + (time_rect.height() - badge_height) // 2
+            next_badge_x = self._draw_badge(
+                painter, font, badge_text,
+                QColor(border_color), QColor(style["badge_bg"]),
+                next_badge_x, rect.top(), time_rect.height(),
+            )
 
-            # Badge background
-            badge_rect = QRect(badge_x, badge_y, badge_width, badge_height)
-            painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QColor(style["badge_bg"]))
-            painter.drawRoundedRect(badge_rect, 4, 4)
-
-            # Badge text
-            painter.setPen(QColor(border_color))
-            painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, badge_text)
+        # Overlap badge (next to confidence badge or timestamp)
+        if is_overlap:
+            self._draw_badge(
+                painter, font, self.OVERLAP_BADGE_TEXT,
+                self.OVERLAP_COLOR, self.OVERLAP_BADGE_BG,
+                next_badge_x, rect.top(), time_rect.height(),
+            )
 
         # Draw Text
         font.setBold(False)
@@ -191,6 +225,7 @@ class TranscriptDelegate(QStyledItemDelegate):
         text = index.data(index.model().TextRole)
         translation = index.data(index.model().TranslationRole)
         words = index.data(index.model().WordsRole)
+        is_overlap = bool(index.data(index.model().OverlapRole))
 
         font = option.font
         font.setBold(True)
@@ -200,6 +235,16 @@ class TranscriptDelegate(QStyledItemDelegate):
 
         font.setBold(False)
         font.setPointSize(12)
+
+        # Account for overlap badge width if present
+        overlap_margin = 0
+        if is_overlap:
+            overlap_font = QFont(font)
+            overlap_font.setPointSize(8)
+            overlap_font.setBold(True)
+            overlap_fm = QFontMetrics(overlap_font)
+            # badge_width = horizontalAdvance(text) + 12 (paint padding) + 10 (gap to content)
+            overlap_margin = overlap_fm.horizontalAdvance(self.OVERLAP_BADGE_TEXT) + 22
 
         doc = QTextDocument()
         doc.setDefaultFont(font)
@@ -219,7 +264,7 @@ class TranscriptDelegate(QStyledItemDelegate):
         if translation:
             display_text += f"<br><br><span style='color: #a0c0ff;'><b>Translation:</b> {translation}</span>"
         doc.setHtml(display_text)
-        doc.setTextWidth(option.rect.width() - 2 * self.margins)
+        doc.setTextWidth(option.rect.width() - 2 * self.margins - overlap_margin)
 
         text_height = int(doc.size().height())
 
