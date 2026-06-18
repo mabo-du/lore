@@ -87,7 +87,7 @@ class DiarizationEngine:
         # ── Stage 1: VAD to find speech regions ──────────────────────────
         vad_model_dir = ModelManager.ensure_model("VAD")
         vad = SileroVAD()
-        vad.load(Path(vad_model_dir) / "silero_vad.onnx")
+        vad.load(Path(vad_model_dir) / ModelManager.VAD_FILENAME)
         speech_regions = vad.detect_speech_regions(audio)
 
         # ── Stage 2: Overlap detection ────────────────────────────────────
@@ -111,7 +111,7 @@ class DiarizationEngine:
         # ── Stage 3: Extract embeddings, separate clean vs overlap ────────
         we_model_dir = ModelManager.ensure_model("WeSpeaker")
         embedder = SpeakerEmbedding()
-        embedder.load(Path(we_model_dir) / "model.onnx")
+        embedder.load(Path(we_model_dir) / "onnx/model.onnx")
 
         clean_embeddings = []  # For clustering
         clean_times = []       # Parallel list of (start_s, end_s)

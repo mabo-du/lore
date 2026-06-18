@@ -1,0 +1,62 @@
+[
+  {
+    "file": "abjxc",
+    "reference_speakers": 1,
+    "resemblyzer": {
+      "der": 0.750159744408946,
+      "confusion": 24.08,
+      "miss": 0.0,
+      "false_alarm": 22.060000000000016,
+      "speaker_count_ref": 1,
+      "speaker_count_hyp": 2
+    },
+    "onnx": {
+      "der": 0.12316293929712464,
+      "confusion": 4.420000000000002,
+      "miss": 0.0,
+      "false_alarm": 0.0,
+      "speaker_count_ref": 1,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "afjiv",
+    "reference_speakers": 5,
+    "resemblyzer": {
+      "der": 0.6494661921708187,
+      "confusion": 40.539999999999985,
+      "miss": 0.0,
+      "false_alarm": 27.70000000000003,
+      "speaker_count_ref": 5,
+      "speaker_count_hyp": 2
+    },
+    "onnx": {
+      "der": 0.75202199935296,
+      "confusion": 10.579999999999977,
+      "miss": 0.0,
+      "false_alarm": 0.0,
+      "speaker_count_ref": 5,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "ahnss",
+    "reference_speakers": 4,
+    "resemblyzer": {
+      "der": 0.6647397245118108,
+      "confusion": 307.8799999999998,
+      "miss": 0.0,
+      "false_alarm": 104.86000000000006,
+      "speaker_count_ref": 4,
+      "speaker_count_hyp": 2
+    },
+    "onnx": {
+      "der": 0.6710100369253748,
+      "confusion": 349.85,
+      "miss": 0.0,
+      "false_alarm": 1.8439374999999316,
+      "speaker_count_ref": 4,
+      "speaker_count_hyp": 2
+    }
+  }
+]

@@ -11,7 +11,7 @@ class ModelManager:
     resumable downloads and robust caching.
     """
 
-    VAD_FILENAME = "silero_vad.onnx"
+    VAD_FILENAME = "onnx/model.onnx"
 
     # Whisper tiers use faster-whisper's native size strings so model
     # resolution is handled by the library itself (no HF repo ID needed).
@@ -45,7 +45,7 @@ class ModelManager:
         "LLM": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
         "Translation": "JustFrederik/nllb-200-distilled-600M-ct2-int8",
         "Segmentation": "onnx-community/pyannote-segmentation-3.0",
-        "VAD": "snakers4/silero-vad",
+        "VAD": "onnx-community/silero-vad",
         "WeSpeaker": "onnx-community/wespeaker-voxceleb-resnet34-LM",
     }
 
@@ -118,14 +118,14 @@ class ModelManager:
                 repo_id=identifier,
                 cache_dir=cache_dir,
                 local_files_only=False,
-                allow_patterns=["silero_vad.onnx"],
+                allow_patterns=["onnx/model.onnx"],
             )
         elif quality_tier == "WeSpeaker":
             model_path = snapshot_download(
                 repo_id=identifier,
                 cache_dir=cache_dir,
                 local_files_only=False,
-                allow_patterns=["model.onnx"],
+                allow_patterns=["onnx/model.onnx"],
             )
         elif quality_tier == "LLM":
             model_path = snapshot_download(
@@ -170,14 +170,14 @@ class ModelManager:
                     repo_id=identifier,
                     cache_dir=cache_dir,
                     local_files_only=True,
-                    allow_patterns=["silero_vad.onnx"],
+                    allow_patterns=["onnx/model.onnx"],
                 )
             elif quality_tier == "WeSpeaker":
                 path = snapshot_download(
                     repo_id=identifier,
                     cache_dir=cache_dir,
                     local_files_only=True,
-                    allow_patterns=["model.onnx"],
+                    allow_patterns=["onnx/model.onnx"],
                 )
             elif quality_tier == "LLM":
                 path = snapshot_download(
@@ -242,14 +242,14 @@ class ModelManager:
                         repo_id=repo_id,
                         cache_dir=cache_dir,
                         tqdm_class=tqdm,
-                        allow_patterns=["silero_vad.onnx"],
+                        allow_patterns=["onnx/model.onnx"],
                     )
                 elif key == "WeSpeaker":
                     snapshot_download(
                         repo_id=repo_id,
                         cache_dir=cache_dir,
                         tqdm_class=tqdm,
-                        allow_patterns=["model.onnx"],
+                        allow_patterns=["onnx/model.onnx"],
                     )
                 elif key == "LLM":
                     snapshot_download(
@@ -307,14 +307,14 @@ class ModelManager:
                         repo_id=repo_id,
                         cache_dir=cache_dir,
                         local_files_only=True,
-                        allow_patterns=["silero_vad.onnx"],
+                        allow_patterns=["onnx/model.onnx"],
                     )
                 elif key == "WeSpeaker":
                     snapshot_download(
                         repo_id=repo_id,
                         cache_dir=cache_dir,
                         local_files_only=True,
-                        allow_patterns=["model.onnx"],
+                        allow_patterns=["onnx/model.onnx"],
                     )
                 elif key == "LLM":
                     snapshot_download(

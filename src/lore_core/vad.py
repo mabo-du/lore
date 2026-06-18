@@ -1,9 +1,18 @@
 """
-Silero VAD (Voice Activity Detection) via ONNX Runtime.
+Silero VAD (Voice Activity Detection) via ONNX Runtime (streaming variant).
 
-The official Silero VAD model ships pre-exported ONNX weights.
-This module loads them directly through onnxruntime, avoiding
-the PyTorch dependency of the official silero-vad PyPI package.
+Model: onnx-community/silero-vad (onnx/model.onnx)
+License: MIT
+
+The streaming variant maintains internal recurrent state across calls,
+allowing frame-by-frame processing without re-encoding the full audio
+history. Input shape: (batch, samples). Requires sr (sample rate)
+and state tensors.
+
+Verified against the actual model weights:
+  Inputs:  input [None, None] float32,  state [2, None, 128] float32,
+           sr scalar int64
+  Outputs: output [batch, 1] float32,  stateN [2, ...] float32
 """
 
 from pathlib import Path
@@ -17,11 +26,19 @@ FRAME_SIZE = 512  # 32ms @ 16kHz
 HOP_SIZE = 160    # 10ms @ 16kHz
 
 
+def _new_state(batch: int = 1) -> np.ndarray:
+    """Create zero-filled initial hidden state for the streaming VAD."""
+    return np.zeros((2, batch, 128), dtype=np.float32)
+
+
 class SileroVAD:
-    """Voice Activity Detection using Silero VAD ONNX model."""
+    """Voice Activity Detection using Silero VAD ONNX model (streaming)."""
 
     def __init__(self, model_path: Optional[Path] = None):
         self._session = None
+        self._input_names: list[str] = []
+        self._output_names: list[str] = []
+        self._state: Optional[np.ndarray] = None
         if model_path:
             self.load(model_path)
 
@@ -30,22 +47,41 @@ class SileroVAD:
         self._session = onnxruntime.InferenceSession(
             str(model_path), providers=["CPUExecutionProvider"]
         )
+        self._input_names = [inp.name for inp in self._session.get_inputs()]
+        self._output_names = [out.name for out in self._session.get_outputs()]
+        self.reset_state()
+
+    def reset_state(self) -> None:
+        """Reset the internal recurrent state for a new audio stream."""
+        self._state = _new_state()
 
     def is_speech(self, audio: np.ndarray, sr: int = SAMPLE_RATE) -> bool:
-        """Returns True if the audio chunk contains speech."""
+        """
+        Returns True if the audio chunk contains speech.
+
+        Args:
+            audio: float32 array normalized to [-1, 1], shape (samples,) or (1, samples)
+            sr: sample rate (must be 16000)
+
+        Maintains internal recurrent state across calls.
+        """
         if self._session is None:
             raise RuntimeError("VAD model not loaded")
-        # Silero VAD expects float32 input, normalized to [-1, 1]
+
         if audio.dtype != np.float32:
             audio = audio.astype(np.float32)
-        input_name = self._session.get_inputs()[0].name
-        # Input shape: (batch, samples) or (batch, 1, samples)
         if audio.ndim == 1:
-            audio = audio[np.newaxis, :]
-        outputs = self._session.run(None, {input_name: audio})
-        # Output is probability of speech
-        prob = outputs[0]
-        return float(prob[0][0]) > 0.5
+            audio = audio[np.newaxis, :]  # (1, samples)
+
+        # Build input dict matching model's expected names
+        feed = {
+            self._input_names[0]: audio,    # input
+            self._input_names[1]: self._state,  # state
+            self._input_names[2]: np.array(sr, dtype=np.int64),  # sr
+        }
+        outputs = self._session.run(self._output_names, feed)
+        self._state = outputs[1]  # stateN for next call
+        return float(outputs[0][0][0]) > 0.5
 
     def detect_speech_regions(
         self, audio: np.ndarray, sr: int = SAMPLE_RATE
@@ -65,17 +101,16 @@ class SileroVAD:
         if audio.ndim > 1:
             audio = audio.mean(axis=1) if audio.shape[1] < audio.shape[0] else audio[0]
 
-        input_name = self._session.get_inputs()[0].name
+        # Reset state for new stream
+        self.reset_state()
+
         speech_frames = []
 
         # Slide over audio in HOP_SIZE increments
         for start in range(0, len(audio) - FRAME_SIZE, HOP_SIZE):
             chunk = audio[start:start + FRAME_SIZE]
-            # Silero VAD expects (batch, samples) or (batch, 1, samples)
-            chunk_in = chunk[np.newaxis, :]
-            outputs = self._session.run(None, {input_name: chunk_in})
-            prob = float(outputs[0][0][0])
-            speech_frames.append(prob > 0.5)
+            prob = self.is_speech(chunk, sr)
+            speech_frames.append(prob)
 
         # Convert frame-level decisions to sample-level regions
         regions = []
@@ -92,9 +127,6 @@ class SileroVAD:
                 in_speech = True
                 region_start = sample_pos
             elif not is_speech and in_speech:
-                # Check if silence is long enough to split regions
-                silence_start = sample_pos  # noqa: F841
-                # Look ahead to find end of silence
                 j = i
                 while j < len(speech_frames) and not speech_frames[j]:
                     j += 1
