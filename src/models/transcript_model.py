@@ -1,4 +1,4 @@
-from PyQt6.QtCore import QAbstractListModel, Qt, QModelIndex, pyqtSignal
+from PyQt6.QtCore import QAbstractListModel, Qt, QModelIndex
 from models.transcript import Transcript, Segment
 
 class TranscriptListModel(QAbstractListModel):
@@ -93,10 +93,11 @@ class TranscriptListModel(QAbstractListModel):
     def get_transcript(self) -> Transcript:
         return self._transcript
 
-    def add_entities(self, entities: list['EntityData']):
+    def add_entities(self, entities: list):
         """Adds entities to the corresponding segment based on start_ms."""
         import bisect
-        if not entities: return
+        if not entities:
+            return
         starts = [s.start_ms for s in self._transcript.segments]
         idx = bisect.bisect_left(starts, entities[0].segment_start_ms)
         if idx < len(self._transcript.segments) and self._transcript.segments[idx].start_ms == entities[0].segment_start_ms:
