@@ -70,9 +70,7 @@ Before transcribing, it's highly recommended to provide Lore with contextual ter
    - *Example: "Nunn Center, oral history, John Doe, Appalachia"*
 3. Select your **Model Quality Tier**: Fast (small model, lower accuracy), Balanced (medium), or Best Quality (large-v3-turbo, highest accuracy). Best Quality is the default and recommended for oral history work.
 4. These terms are passed to the AI as an "initial prompt." The AI will use this prompt to heavily bias its decoding towards spelling these localized terms correctly, without slowing down the transcription speed.
-5. Select your preferred **Speaker Diarization Engine**: Resemblyzer (fast, no token required) or Pyannote 3.1 (high accuracy, requires HuggingFace token).
-   - Your HuggingFace token is encrypted before storage using AES-256 Fernet encryption (or your system's keyring when available).
-6. Set the **Number of Speakers** (1–20) expected in the recording. The default of 2 works for most oral history interviews. Increase for panel discussions or group recordings.
+5. Set the **Number of Speakers** (1–20) expected in the recording. Leave at 0 for automatic detection (GMM-BIC estimation). The default of 2 works for most oral history interviews. Increase for panel discussions or group recordings.
 
 ## 4. Offline Preparation
 

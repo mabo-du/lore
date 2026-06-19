@@ -22,7 +22,7 @@ No data leaves your computer. No cloud subscriptions. Just powerful, open-source
 ## ✨ Features
 
 - 🎧 **Offline Transcription:** Powered by `faster-whisper`, optimized for CPU inference with low memory overhead (< 8GB RAM).
-- 🗣️ **Speaker Diarization:** Automatically identifies and labels different speakers using `pyannote.audio` or `Resemblyzer`, with configurable speaker count (1–20).
+- 🗣️ **Speaker Diarization:** Automatically identifies and labels different speakers using the ONNX-based pipeline (Silero VAD + WeSpeaker embedding + spectral clustering). No GPU, no HuggingFace token, no PyTorch required.
 - 🔀 **Overlapping Speech Detection:** Flags when multiple speakers talk simultaneously via a lightweight ONNX segmentation model (6 MB). Overlap regions are visualised on a dedicated strip and per-segment badges in the transcript view.
 - ⚡ **Model Tier Selection:** Choose between Fast (small), Balanced (medium), or Best Quality (large-v3-turbo) Whisper models in Settings.
 - 🔍 **Word-Level Confidence:** Low-confidence words are visually highlighted so you can quickly spot potential hallucinations.
