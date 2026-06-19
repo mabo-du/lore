@@ -222,6 +222,9 @@ class MainWindow(QMainWindow):
         self.audio_player.duration_changed.connect(self._on_duration_changed)
         self.audio_player.state_changed.connect(self._on_player_state_changed)
 
+        # Connect transcript word-click signal
+        self.transcript_view.word_clicked.connect(self._on_word_clicked)
+
     def open_settings(self):
         dlg = SettingsDialog(self)
         dlg.exec()
@@ -395,6 +398,13 @@ class MainWindow(QMainWindow):
 
         self.transcript_model.clear_segments()
 
+        # Try to load previously saved transcript
+        self._auto_load_transcript()
+        if self.transcript_model.get_transcript().segments:
+            # Saved transcript loaded — skip transcription, go to editor
+            self._on_transcription_finished()
+            return
+
         # Start transcription worker
         self.worker = TranscriptionWorker(
             self.working_audio_path,
@@ -469,6 +479,9 @@ class MainWindow(QMainWindow):
         self.stack.setCurrentIndex(2)  # Editor page
         self.btn_transcribe.setEnabled(True)
 
+        # Auto-save the completed transcript
+        self._auto_save_transcript()
+
         # Start RAGWorker for domain taxonomy auto-tagging (if taxonomy DB exists)
         try:
             from lore_core.rag_worker import RAGWorker
@@ -501,6 +514,65 @@ class MainWindow(QMainWindow):
                 idx, QAbstractItemView.ScrollHint.PositionAtCenter
             )
             self.transcript_view.setCurrentIndex(idx)
+
+    def _on_word_clicked(self, ms: int):
+        """Seek audio to the clicked word's timestamp."""
+        self.audio_player.seek(ms)
+
+    def _auto_save_transcript(self):
+        """Save the current transcript to a local JSON file."""
+        import json
+
+        transcript = self.transcript_model.get_transcript()
+        if not transcript.segments:
+            return
+
+        # Save alongside the working audio file
+        save_path = self.working_audio_path.with_suffix(".transcript.json")
+        try:
+            data = {
+                "segments": [
+                    {
+                        "start_ms": s.start_ms,
+                        "end_ms": s.end_ms,
+                        "text": s.text,
+                        "speaker_label": s.speaker_label,
+                    }
+                    for s in transcript.segments
+                ],
+                "metadata": {
+                    "language": transcript.metadata.language,
+                    "duration_ms": transcript.metadata.duration_ms,
+                },
+            }
+            save_path.write_text(json.dumps(data, indent=2))
+        except Exception as e:
+            print(f"Auto-save failed: {e}")
+
+    def _auto_load_transcript(self):
+        """Load a previously auto-saved transcript if available."""
+        import json
+        from models.transcript import Segment
+
+        save_path = self.working_audio_path.with_suffix(".transcript.json")
+        if not save_path.exists():
+            return
+
+        try:
+            data = json.loads(save_path.read_text())
+            segments = [
+                Segment(
+                    start_ms=s["start_ms"],
+                    end_ms=s["end_ms"],
+                    text=s["text"],
+                    speaker_label=s.get("speaker_label"),
+                )
+                for s in data["segments"]
+            ]
+            self.transcript_model.update_segments(segments)
+            print(f"Loaded {len(segments)} segments from auto-save")
+        except Exception as e:
+            print(f"Auto-load failed: {e}")
 
     def _on_transcription_error(self, err_msg: str):
         self.status_label.setText(f"Transcription Error:\n{err_msg}")

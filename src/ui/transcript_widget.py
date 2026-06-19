@@ -6,8 +6,14 @@ from PyQt6.QtWidgets import (
     QStyleOptionViewItem,
     QStyle,
 )
-from PyQt6.QtGui import QPainter, QColor, QFontMetrics, QFont, QTextDocument
-from PyQt6.QtCore import Qt, QSize, QModelIndex, QRect
+from PyQt6.QtGui import (
+    QPainter,
+    QColor,
+    QFontMetrics,
+    QFont,
+    QTextDocument,
+)
+from PyQt6.QtCore import Qt, QSize, QModelIndex, QRect, pyqtSignal
 import datetime
 
 
@@ -288,6 +294,8 @@ class TranscriptDelegate(QStyledItemDelegate):
 
 
 class TranscriptWidget(QListView):
+    word_clicked = pyqtSignal(int)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setItemDelegate(TranscriptDelegate(self))
@@ -303,6 +311,84 @@ class TranscriptWidget(QListView):
                 background-color: #2d2d2d;
             }
         """)
+
+    def mousePressEvent(self, event):
+        """Handle left-click on words to seek audio playback."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            index = self.indexAt(event.pos())
+            if index.isValid():
+                words = index.data(index.model().WordsRole)
+                if words:
+                    delegate = self.itemDelegate()
+                    rect = self.visualRect(index)
+
+                    font = self.font()
+                    font.setBold(True)
+                    font.setPointSize(10)
+                    fm = QFontMetrics(font)
+                    time_height = fm.height()
+
+                    margins = delegate.margins
+                    spacing = delegate.spacing
+
+                    # Text area bounds (matching delegate paint())
+                    text_area_left = rect.left() + margins
+                    text_area_top = rect.top() + margins + time_height + spacing
+                    text_area_width = rect.width() - 2 * margins
+                    text_area_height = rect.height() - 2 * margins - time_height - spacing
+
+                    text_rect = QRect(
+                        text_area_left, text_area_top,
+                        text_area_width, text_area_height,
+                    )
+
+                    if text_rect.contains(event.pos()):
+                        # Build QTextDocument matching delegate's paint() layout
+                        font.setBold(False)
+                        font.setPointSize(12)
+                        doc = QTextDocument()
+                        doc.setDefaultFont(font)
+
+                        text_hex = "#cccccc"
+                        html_words = []
+                        for w in words:
+                            if w.get("prob", 1.0) < 0.6:
+                                html_words.append(
+                                    f"<span style='color: #ffaa99;'>{w['word']}</span>"
+                                )
+                            else:
+                                html_words.append(
+                                    f"<span style='color: {text_hex};'>{w['word']}</span>"
+                                )
+                        display_text = "".join(html_words)
+                        doc.setHtml(display_text)
+                        doc.setTextWidth(text_area_width)
+
+                        # Map click position to character position in document
+                        doc_pos = event.pos() - text_rect.topLeft()
+                        hit_pos = doc.documentLayout().hitTest(
+                            doc_pos, Qt.HitTestAccuracy.FuzzyHit
+                        )
+
+                        if hit_pos >= 0:
+                            # Map character position to word index
+                            plain_text = ""
+                            word_boundaries = []
+                            for w in words:
+                                word_text = w["word"]
+                                start = len(plain_text)
+                                plain_text += word_text
+                                end = len(plain_text) - 1
+                                word_boundaries.append((start, end))
+
+                            for i, (start, end) in enumerate(word_boundaries):
+                                if start <= hit_pos <= end:
+                                    word_start_ms = words[i].get("start")
+                                    if word_start_ms is not None:
+                                        self.word_clicked.emit(int(word_start_ms))
+                                        return
+
+        super().mousePressEvent(event)
 
     def contextMenuEvent(self, event):
         """Show right-click context menu for segment actions."""
@@ -321,6 +407,11 @@ class TranscriptWidget(QListView):
         # Copy text
         copy_action = menu.addAction("Copy Segment Text")
         copy_action.triggered.connect(lambda: self._copy_segment_text(index))
+
+        # Merge with next (only if not last segment)
+        if index.row() < index.model().rowCount() - 1:
+            merge_action = menu.addAction("Merge with Next Segment")
+            merge_action.triggered.connect(lambda: self._merge_with_next(index))
 
         menu.exec(event.globalPos())
 
@@ -354,3 +445,27 @@ class TranscriptWidget(QListView):
         from PyQt6.QtWidgets import QApplication
         text = index.data(index.model().TextRole)
         QApplication.clipboard().setText(text)
+
+    def _merge_with_next(self, index):
+        """Merge the selected segment with the segment below it."""
+        row = index.row()
+        model = index.model()
+        transcript = model.get_transcript()
+
+        if row >= len(transcript.segments) - 1:
+            return  # No next segment
+
+        current = transcript.segments[row]
+        next_seg = transcript.segments[row + 1]
+
+        # Merge text and extend end time
+        merged_text = f"{current.text} {next_seg.text}".strip()
+        current.end_ms = next_seg.end_ms
+        current.text = merged_text
+
+        # Remove the next segment
+        transcript.segments.pop(row + 1)
+
+        # Notify the model of changes
+        model.beginResetModel()
+        model.endResetModel()
