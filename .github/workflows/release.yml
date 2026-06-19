@@ -107,8 +107,6 @@ jobs:
             --hidden-import sklearn.utils._typedefs \
             --hidden-import sklearn.neighbors._partition_nodes \
             --collect-all gliner2_onnx \
-            --collect-all resemblyzer \
-            --collect-all pyannote \
             src/main.py
 
       - name: Package (Linux/macOS)
@@ -162,7 +160,39 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: "Lore ${{ github.ref_name }}"
-          generate_release_notes: true
+          body: |
+            ## v${{ github.ref_name }} — ONNX-Only Diarization, PyTorch Removed
+
+            ### Breaking
+            - **PyTorch dependency removed.** Diarization now runs entirely through ONNX Runtime.
+              Settings no longer has engine selection or HuggingFace token fields.
+              If you were using Pyannote or Resemblyzer, the new ONNX path is a drop-in
+              replacement — better accuracy, zero configuration.
+
+            ### Added
+            - **ONNX diarization pipeline** — Silero VAD (2 MB) + WeSpeaker ResNet34-LM (25 MB) +
+              spectral clustering. Verified on 216 VoxConverse files: 39% DER vs Resemblyzer's 66%.
+            - **Two-stage overlap-aware clustering** — overlapping frames are removed before
+              clustering, then assigned to the nearest speaker centroid. Reduces speaker
+              confusion caused by entangled overlapping embeddings.
+            - **Average Stitching** — center-weighted smoothing across sliding windows for
+              cleaner frame-level overlap scores.
+            - **Silero VAD ONNX** — Voice Activity Detection without PyTorch. Streaming model
+              variant with proper state management.
+            - **CREDITS.md** — Attribution for WeSpeaker (CC-BY-4.0) and diarize library reference (Apache 2.0).
+
+            ### Changed
+            - DiarizationEngine simplified to a single ONNX path (no more engine selection).
+            - Settings dialog: removed radio buttons, token input, engine toggle.
+            - `use_pyannote` and `hf_token` parameters removed from TranscriptionWorker.
+            - pyproject.toml: removed `pyannote-audio==3.3.2` and `resemblyzer>=0.1.4`.
+            - README and USER_GUIDE updated to reflect ONNX-only pipeline.
+
+            ### Fixed
+            - VAD model path corrected from `snakers4/silero-vad` (404) to `onnx-community/silero-vad`.
+            - WeSpeaker model path corrected from `model.onnx` to `onnx/model.onnx`.
+            - Embedding preprocessing fixed: model expects 80-band mel spectrograms, not raw audio.
+            - Tests rewritten to download and verify against real model weights instead of mocks.
           files: |
             release/**
           fail_on_unmatched_files: false
