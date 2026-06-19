@@ -424,9 +424,10 @@ class TranscriptWidget(QListView):
 
         menu.addSeparator()
 
-        # Time format toggle
-        current_fmt = getattr(self, '_time_format', self.TIME_FORMAT_LONG)
-        fmt_label = "Use MM:SS.mmm Time Format" if current_fmt == self.TIME_FORMAT_LONG else "Use HH:MM:SS Time Format"
+        # Time format toggle (constants live on TranscriptDelegate)
+        delegate = self.itemDelegate()
+        current_fmt = getattr(delegate, '_time_format', delegate.TIME_FORMAT_LONG)
+        fmt_label = "Use MM:SS.mmm Time Format" if current_fmt == delegate.TIME_FORMAT_LONG else "Use HH:MM:SS Time Format"
         fmt_action = menu.addAction(fmt_label)
         fmt_action.triggered.connect(self._toggle_time_format)
 
@@ -465,10 +466,11 @@ class TranscriptWidget(QListView):
 
     def _toggle_time_format(self):
         """Toggle between HH:MM:SS and MM:SS.mmm time display."""
-        current = getattr(self, '_time_format', self.TIME_FORMAT_LONG)
-        self._time_format = self.TIME_FORMAT_SHORT if current == self.TIME_FORMAT_LONG else self.TIME_FORMAT_LONG
+        delegate = self.itemDelegate()
+        current = getattr(delegate, '_time_format', delegate.TIME_FORMAT_LONG)
+        delegate._time_format = delegate.TIME_FORMAT_SHORT if current == delegate.TIME_FORMAT_LONG else delegate.TIME_FORMAT_LONG
         # Repaint all items
-        self.parent().viewport().update() if self.parent() else None
+        self.viewport().update()
 
     def _merge_with_next(self, index):
         """Merge the selected segment with the segment below it."""
