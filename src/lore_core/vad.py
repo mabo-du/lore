@@ -118,7 +118,7 @@ class SileroVAD:
         region_start = 0
 
         min_speech_samples = int(0.1 * sr)  # 100ms minimum speech
-        min_silence_samples = int(0.5 * sr)  # 500ms silence gap = new region
+        min_silence_samples = int(0.3 * sr)  # 300ms silence gap = new region
 
         for i, is_speech in enumerate(speech_frames):
             sample_pos = i * HOP_SIZE

@@ -89,6 +89,10 @@ class SpeakerEmbedding:
         if audio.ndim > 1:
             audio = audio.mean(axis=1) if audio.shape[1] < audio.shape[0] else audio[0]
 
+        # Ensure minimum length for reliable embedding (1s = 16000 samples)
+        if len(audio) < SAMPLE_RATE:
+            audio = np.pad(audio, (0, SAMPLE_RATE - len(audio)), mode='constant')
+
         # Compute mel spectrogram features
         features = self._mel_spectrogram(audio, sr)  # (T, 80)
 

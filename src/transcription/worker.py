@@ -88,7 +88,7 @@ class TranscriptionWorker(QThread):
                 from lore_core.diarization import DiarizationEngine
 
                 diarizer = DiarizationEngine(num_speakers=self.num_speakers)
-                d_results = diarizer.run_diarization(self.audio_path)
+                d_results = diarizer.run_diarization(self.audio_path, segments=all_segments)
 
                 self.status_changed.emit("Aligning speakers...")
                 diarizer.align_speakers_to_segments(all_segments, d_results)

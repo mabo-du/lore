@@ -6,7 +6,7 @@ library (Apache 2.0), reimplemented without the torch dependency.
 
 from typing import Optional
 import numpy as np
-from sklearn.cluster import SpectralClustering
+from sklearn.cluster import SpectralClustering, KMeans
 from sklearn.mixture import GaussianMixture
 
 
