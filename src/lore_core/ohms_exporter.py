@@ -175,3 +175,15 @@ class OhmsExporter:
 
         with open(output_path, "wb") as f:
             f.write(xml_bytes)
+
+    @classmethod
+    def export_txt(cls, transcript: Transcript, metadata: dict, output_path: Path) -> None:
+        """Export transcript as plain text with speaker labels and timestamps."""
+        lines = []
+        for seg in transcript.segments:
+            ts = f"[{_format_vtt_time(seg.start_ms / 1000.0)} - {_format_vtt_time(seg.end_ms / 1000.0)}]"
+            if seg.speaker_label:
+                lines.append(f"{ts} {seg.speaker_label}: {seg.text}")
+            else:
+                lines.append(f"{ts} {seg.text}")
+        output_path.write_text("\n\n".join(lines), encoding="utf-8")

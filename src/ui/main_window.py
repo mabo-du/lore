@@ -543,6 +543,13 @@ class MainWindow(QMainWindow):
         else:
             self.play_btn.setText("Play")
 
+    def keyPressEvent(self, event):
+        """Handle keyboard shortcuts."""
+        if event.key() == Qt.Key.Key_Space:
+            self._toggle_playback()
+        else:
+            super().keyPressEvent(event)
+
     def _toggle_playback(self):
         if self.audio_player._player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
             self.audio_player.pause()
@@ -564,17 +571,24 @@ class MainWindow(QMainWindow):
         )
 
     def _on_export(self, metadata: dict):
-        save_path, _ = QFileDialog.getSaveFileName(
+        save_path, selected_filter = QFileDialog.getSaveFileName(
             self,
-            "Save OHMS XML",
+            "Save Transcript",
             str(self.original_audio_path.with_suffix(".xml")),
-            "XML Files (*.xml)",
+            "OHMS XML (*.xml);;Plain Text (*.txt)",
         )
         if save_path:
             try:
-                OhmsExporter.export(
-                    self.transcript_model.get_transcript(), metadata, Path(save_path)
-                )
+                if save_path.endswith(".txt"):
+                    OhmsExporter.export_txt(
+                        self.transcript_model.get_transcript(),
+                        metadata,
+                        Path(save_path),
+                    )
+                else:
+                    OhmsExporter.export(
+                        self.transcript_model.get_transcript(), metadata, Path(save_path)
+                    )
                 QMessageBox.information(
                     self, "Export Successful", f"Saved to {save_path}"
                 )

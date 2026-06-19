@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import (
     QListView,
+    QMenu,
     QStyledItemDelegate,
     QTextEdit,
     QStyleOptionViewItem,
@@ -302,3 +303,54 @@ class TranscriptWidget(QListView):
                 background-color: #2d2d2d;
             }
         """)
+
+    def contextMenuEvent(self, event):
+        """Show right-click context menu for segment actions."""
+        index = self.indexAt(event.pos())
+        if not index.isValid():
+            return
+
+        menu = QMenu(self)
+
+        # Rename speaker (if segment has one)
+        speaker = index.data(index.model().SpeakerRole)
+        if speaker:
+            rename_action = menu.addAction(f"Rename Speaker ({speaker})")
+            rename_action.triggered.connect(lambda: self._rename_speaker(index))
+
+        # Copy text
+        copy_action = menu.addAction("Copy Segment Text")
+        copy_action.triggered.connect(lambda: self._copy_segment_text(index))
+
+        menu.exec(event.globalPos())
+
+    def _rename_speaker(self, index):
+        """Rename all segments with the same speaker label."""
+        from PyQt6.QtWidgets import QInputDialog
+
+        old_speaker = index.data(index.model().SpeakerRole)
+        if not old_speaker:
+            return
+
+        new_speaker, ok = QInputDialog.getText(
+            self, "Rename Speaker",
+            f"New name for {old_speaker}:",
+            text=old_speaker
+        )
+        if not ok or not new_speaker.strip():
+            return
+
+        new_speaker = new_speaker.strip()
+        model = index.model()
+        transcript = model.get_transcript()
+
+        # Update all segments with this speaker label
+        for i, seg in enumerate(transcript.segments):
+            if seg.speaker_label == old_speaker:
+                model.update_segment_speaker(i, new_speaker)
+
+    def _copy_segment_text(self, index):
+        """Copy segment text to clipboard."""
+        from PyQt6.QtWidgets import QApplication
+        text = index.data(index.model().TextRole)
+        QApplication.clipboard().setText(text)
