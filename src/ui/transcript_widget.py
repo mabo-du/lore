@@ -14,7 +14,6 @@ from PyQt6.QtGui import (
     QTextDocument,
 )
 from PyQt6.QtCore import Qt, QSize, QModelIndex, QRect, pyqtSignal
-import datetime
 
 
 class TranscriptDelegate(QStyledItemDelegate):
@@ -23,11 +22,21 @@ class TranscriptDelegate(QStyledItemDelegate):
         self.margins = 10
         self.spacing = 5
 
+    TIME_FORMAT_LONG = "long"    # HH:MM:SS
+    TIME_FORMAT_SHORT = "short"  # MM:SS.mmm
+
     def _format_time(self, ms: int) -> str:
-        seconds = ms // 1000
-        td = datetime.timedelta(seconds=seconds)
-        # return HH:MM:SS format
-        return str(td)
+        seconds = ms / 1000.0
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = seconds % 60
+
+        # Read format preference from settings
+        fmt = getattr(self, '_time_format', self.TIME_FORMAT_LONG)
+        if fmt == self.TIME_FORMAT_SHORT:
+            return f"{minutes:02d}:{secs:05.2f}"
+        # Default: HH:MM:SS
+        return f"{hours:02d}:{minutes:02d}:{int(secs):02d}"
 
     # Confidence level → visual styling map
     CONFIDENCE_STYLES = {
@@ -413,6 +422,14 @@ class TranscriptWidget(QListView):
             merge_action = menu.addAction("Merge with Next Segment")
             merge_action.triggered.connect(lambda: self._merge_with_next(index))
 
+        menu.addSeparator()
+
+        # Time format toggle
+        current_fmt = getattr(self, '_time_format', self.TIME_FORMAT_LONG)
+        fmt_label = "Use MM:SS.mmm Time Format" if current_fmt == self.TIME_FORMAT_LONG else "Use HH:MM:SS Time Format"
+        fmt_action = menu.addAction(fmt_label)
+        fmt_action.triggered.connect(self._toggle_time_format)
+
         menu.exec(event.globalPos())
 
     def _rename_speaker(self, index):
@@ -445,6 +462,13 @@ class TranscriptWidget(QListView):
         from PyQt6.QtWidgets import QApplication
         text = index.data(index.model().TextRole)
         QApplication.clipboard().setText(text)
+
+    def _toggle_time_format(self):
+        """Toggle between HH:MM:SS and MM:SS.mmm time display."""
+        current = getattr(self, '_time_format', self.TIME_FORMAT_LONG)
+        self._time_format = self.TIME_FORMAT_SHORT if current == self.TIME_FORMAT_LONG else self.TIME_FORMAT_LONG
+        # Repaint all items
+        self.parent().viewport().update() if self.parent() else None
 
     def _merge_with_next(self, index):
         """Merge the selected segment with the segment below it."""
