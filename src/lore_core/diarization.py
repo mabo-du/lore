@@ -42,7 +42,6 @@ class DiarizationEngine:
         """
         from utils.model_manager import ModelManager
         from lore_core.embedding import SpeakerEmbedding
-        from lore_core.clustering import SpeakerClustering
         import wave
         import numpy as np
         from pathlib import Path
