@@ -1,3 +1,31 @@
+## [0.1.9] — 2026-06-19
+
+### Fixed
+- **Speaker diarization collapse** — Replaced VAD-based segmentation with segment-based
+  embedding extraction. Speaker labels now come directly from Whisper segment boundaries
+  instead of separate VAD regions, fixing the issue where all speakers collapsed to
+  SPEAKER_00 after the first few segments. KMeans clustering replaces SpectralClustering
+  for more reliable separation on small segment sets.
+- **VAD noise filtering** — Minimum speech segment increased from 100ms to 1s, filtering
+  false positives from breaths and clicks.
+- **App crash on background launch** — (Investigating persistent DISPLAY=:0 segfault)
+
+### Changed
+- **Segment-based diarization** — `DiarizationEngine.run_diarization()` now accepts an
+  optional `segments` parameter. When provided (from transcription), speaker embeddings
+  are extracted directly from each segment's audio slice instead of running a separate
+  VAD pass, improving alignment and accuracy.
+- **KMeans for small segment sets** — Switched from SpectralClustering to KMeans for
+  the segment-based path, which performs better on the 5-20 segments typical of a
+  single transcription session.
+
+## [0.1.8] — 2026-06-19
+
+### Fixed
+- **Speaker collapse in overlap-aware clustering** — Added minimum 4-clean-segments
+  threshold before applying two-stage overlap clustering. Falls back to clustering all
+  segments together when overlap detection is too aggressive.
+
 ## [0.1.7] — 2026-06-19
 
 ### Changed
