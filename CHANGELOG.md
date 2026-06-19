@@ -1,3 +1,24 @@
+## [0.1.10] — 2026-06-19
+
+### Added
+- **Speaker rename** — Right-click any segment → "Rename Speaker" → rename all segments with that label at once.
+- **Copy segment text** — Right-click → "Copy Segment Text" → clipboard.
+- **Space to play/pause** — Space bar toggles audio playback.
+- **Export TXT** — Save dialog now offers plain text alongside OHMS XML.
+- **Word click-to-seek** — Click any word in the transcript to jump the audio to that exact moment.
+- **Segment merge** — Right-click → "Merge with Next Segment" to join adjacent segments.
+- **Auto-save transcript** — Segments auto-save as `.transcript.json` alongside the audio. Re-opening the same file reloads them instantly.
+- **Time format toggle** — Right-click → toggle between `HH:MM:SS` and `MM:SS.mmm`.
+
+### Fixed
+- **App crash on right-click** — Time format toggle referenced wrong class constant; fixed to use delegate.
+- **NER model loading failure** — `gliner2-onnx` requires `transformers>=5.0.0` for `TokenizersBackend`. Pinned in `pyproject.toml`.
+- **CI lint issues** — All remaining lint warnings resolved (unused imports, `if not entities: return` one-liner, gitignore `models/` pattern anchored to root).
+
+### Changed
+- **Transcription diarization** — Segment-based embedding extraction replaces VAD-based segmentation. KMeans replaces SpectralClustering for small segment sets. Minimum embedding segment raised to 1s.
+- **VAD silence threshold** — Reduced from 500ms to 300ms for better turn separation.
+
 ## [0.1.9] — 2026-06-19
 
 ### Fixed
