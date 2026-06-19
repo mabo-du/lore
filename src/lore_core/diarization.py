@@ -106,7 +106,10 @@ class DiarizationEngine:
         # ── Stage 4: Cluster clean embeddings ────────────────────────────
         all_labels = {}  # (start_s, end_s) → speaker_label
 
-        if clean_embeddings:
+        # Require at least 4 clean segments for reliable centroids
+        # Otherwise cluster everything together (overlap filtering is too aggressive)
+        _MIN_CLEAN_FOR_TWO_STAGE = 4
+        if len(clean_embeddings) >= _MIN_CLEAN_FOR_TWO_STAGE:
             clusterer = SpeakerClustering(n_speakers=self.num_speakers)
             clean_labels = clusterer.cluster(np.array(clean_embeddings))
 
@@ -137,11 +140,12 @@ class DiarizationEngine:
                 nearest = int(np.argmin(centroid_dists))
                 all_labels[(start_s, end_s)] = f"SPEAKER_{nearest:02d}"
         else:
-            # No clean segments — cluster everything (fallback)
-            all_embs = np.array(overlap_embeddings)
+            # Not enough clean segments — cluster everything together
+            all_embs = np.array(clean_embeddings + overlap_embeddings)
+            all_times = clean_times + overlap_times
             clusterer = SpeakerClustering(n_speakers=self.num_speakers)
             labels = clusterer.cluster(all_embs)
-            for (start_s, end_s), label in zip(overlap_times, labels):
+            for (start_s, end_s), label in zip(all_times, labels):
                 all_labels[(start_s, end_s)] = f"SPEAKER_{label:02d}"
 
         # ── Stage 6: Build results with contiguous merging ──────────────
