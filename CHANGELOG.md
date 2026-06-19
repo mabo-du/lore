@@ -1,3 +1,12 @@
+## [0.1.7] — 2026-06-19
+
+### Changed
+- **Removed PyTorch dependency** — Diarization engine migrated entirely to ONNX Runtime. Removed `pyannote-audio`, `resemblyzer`, and transitive `torch` dependencies. Settings dialog simplified: no engine selection, no HuggingFace token input.
+- **ONNX diarization pipeline** — Full pipeline verified against VoxConverse (216 files, 39% DER) and ESL dialogue spot-check. Replaces Resemblyzer (66% DER) with a 27% relative improvement. Composed of Silero VAD ONNX (2 MB), WeSpeaker ResNet34-LM ONNX (25 MB), spectral clustering, and two-stage overlap-aware assignment.
+
+### Added
+- **CREDITS.md** — Attribution for WeSpeaker (CC-BY-4.0) and diarize library reference (Apache 2.0).
+
 ## [0.1.6] — 2026-06-17
 
 ### Added

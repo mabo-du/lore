@@ -27,8 +27,6 @@ class TranscriptionWorker(QThread):
         audio_path: Path,
         quality_tier: str = "Best Quality",
         enable_diarization: bool = False,
-        use_pyannote: bool = False,
-        hf_token: str = None,
         custom_vocab: str = "",
         num_speakers: int = 2,
         enable_overlap_detection: bool = True,
@@ -38,8 +36,6 @@ class TranscriptionWorker(QThread):
         self.audio_path = audio_path
         self.quality_tier = quality_tier
         self.enable_diarization = enable_diarization
-        self.use_pyannote = use_pyannote
-        self.hf_token = hf_token
         self.custom_vocab = custom_vocab
         self.num_speakers = num_speakers
         self.enable_overlap_detection = enable_overlap_detection
@@ -91,10 +87,7 @@ class TranscriptionWorker(QThread):
                 self.status_changed.emit("Running Speaker Diarization...")
                 from lore_core.diarization import DiarizationEngine
 
-                diarizer = DiarizationEngine(
-                    use_pyannote=self.use_pyannote, hf_token=self.hf_token,
-                    num_speakers=self.num_speakers
-                )
+                diarizer = DiarizationEngine(num_speakers=self.num_speakers)
                 d_results = diarizer.run_diarization(self.audio_path)
 
                 self.status_changed.emit("Aligning speakers...")

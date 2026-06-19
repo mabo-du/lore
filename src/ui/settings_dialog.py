@@ -5,18 +5,14 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QRadioButton,
-    QButtonGroup,
     QLineEdit,
     QFormLayout,
     QGroupBox,
-    QMessageBox,
     QComboBox,
     QSpinBox,
 )
 from PyQt6.QtCore import QSettings
 from utils.model_manager import ModelManager
-from utils.token_vault import encrypt_token, decrypt_token
 
 
 class SettingsDialog(QDialog):
@@ -52,45 +48,24 @@ class SettingsDialog(QDialog):
         layout.addWidget(transcription_group)
 
         # Diarization Group
-        diarization_group = QGroupBox("Speaker Diarization Engine")
+        diarization_group = QGroupBox("Speaker Diarization")
         diarization_layout = QVBoxLayout(diarization_group)
-
-        self.engine_group = QButtonGroup(self)
-
-        self.radio_resemblyzer = QRadioButton("Resemblyzer (Fast, No Token Required)")
-        self.radio_pyannote = QRadioButton(
-            "Pyannote 3.1 (High Accuracy, Requires Token)"
-        )
-
-        self.engine_group.addButton(self.radio_resemblyzer, 0)
-        self.engine_group.addButton(self.radio_pyannote, 1)
-
-        diarization_layout.addWidget(self.radio_resemblyzer)
-        diarization_layout.addWidget(self.radio_pyannote)
-
-        # HuggingFace Token
-        self.token_input = QLineEdit()
-        self.token_input.setEchoMode(QLineEdit.EchoMode.PasswordEchoOnEdit)
-        self.token_input.setPlaceholderText("hf_...")
-
-        form_layout = QFormLayout()
-        form_layout.addRow("HuggingFace Token:", self.token_input)
 
         self.speaker_count_spin = QSpinBox()
         self.speaker_count_spin.setRange(1, 20)
         self.speaker_count_spin.setValue(2)
         self.speaker_count_spin.setToolTip(
-            "Number of speakers expected (Resemblyzer only).\n"
-            "1 = monologue, 2 = interview, 3+ = panel."
+            "Number of speakers expected.\n"
+            "1 = monologue, 2 = interview, 3+ = panel.\n"
+            "Leave at default to auto-detect."
         )
+        form_layout = QFormLayout()
         form_layout.addRow("Number of Speakers:", self.speaker_count_spin)
-
         diarization_layout.addLayout(form_layout)
 
-        # Description
         desc = QLabel(
-            "Note: Diarization attributes transcribed text to specific speakers (e.g., SPEAKER_00).\n"
-            "Pyannote requires a HuggingFace account and acceptance of their model license."
+            "Automatically identifies and labels speakers using the ONNX-based pipeline.\n"
+            "No HuggingFace token required. Runs entirely offline."
         )
         desc.setWordWrap(True)
         desc.setStyleSheet("color: gray; font-size: 11px;")
@@ -148,12 +123,6 @@ class SettingsDialog(QDialog):
 
         self.load_settings()
 
-        self.radio_pyannote.toggled.connect(self._toggle_token_input)
-        self._toggle_token_input()
-
-    def _toggle_token_input(self):
-        self.token_input.setEnabled(self.radio_pyannote.isChecked())
-
     def _run_prefetch(self):
         """Download all models for the currently selected tier."""
         tier = self.model_tier_combo.currentText()
@@ -170,15 +139,6 @@ class SettingsDialog(QDialog):
             self.prefetch_btn.setEnabled(True)
 
     def load_settings(self):
-        use_pyannote = self.settings.value("diarization/use_pyannote", False, type=bool)
-        if use_pyannote:
-            self.radio_pyannote.setChecked(True)
-        else:
-            self.radio_resemblyzer.setChecked(True)
-
-        token = self.settings.value("diarization/hf_token", "")
-        self.token_input.setText(decrypt_token(token))
-
         vocab = self.settings.value("transcription/custom_vocab", "")
         self.vocab_input.setText(vocab)
 
@@ -197,21 +157,6 @@ class SettingsDialog(QDialog):
         self.backchannel_log_checkbox.setChecked(bc_logging)
 
     def save_settings(self):
-        if self.radio_pyannote.isChecked() and not self.token_input.text().strip():
-            QMessageBox.warning(
-                self,
-                "Token Required",
-                "Please enter a HuggingFace token to use Pyannote.",
-            )
-            return
-
-        self.settings.setValue(
-            "diarization/use_pyannote", self.radio_pyannote.isChecked()
-        )
-        self.settings.setValue(
-            "diarization/hf_token",
-            encrypt_token(self.token_input.text().strip()),
-        )
         self.settings.setValue(
             "transcription/custom_vocab", self.vocab_input.text().strip()
         )

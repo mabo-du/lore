@@ -28,8 +28,7 @@ dependencies = [
     "lxml",
     "numpy",
     "tsdownsample",
-    "pyannote-audio==3.3.2",
-    "resemblyzer>=0.1.4",
+    # Diarization: Resemblyzer and Pyannote 3.1 replaced by ONNX path (v0.1.6)
     "gliner2-onnx>=0.1.1",
     "llama-cpp-python>=0.3.25",
     "sqlite-vec>=0.1.9",

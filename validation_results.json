@@ -10,6 +10,9 @@
       "speaker_count_ref": 1,
       "speaker_count_hyp": 2
     },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
     "onnx": {
       "der": 0.12316293929712464,
       "confusion": 4.420000000000002,
@@ -29,6 +32,9 @@
       "false_alarm": 27.70000000000003,
       "speaker_count_ref": 5,
       "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
     },
     "onnx": {
       "der": 0.75202199935296,
@@ -50,12 +56,406 @@
       "speaker_count_ref": 4,
       "speaker_count_hyp": 2
     },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
     "onnx": {
       "der": 0.6710100369253748,
       "confusion": 349.85,
       "miss": 0.0,
       "false_alarm": 1.8439374999999316,
       "speaker_count_ref": 4,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "aisvi",
+    "reference_speakers": 8,
+    "resemblyzer": {
+      "der": 0.4369512084728888,
+      "confusion": 123.88,
+      "miss": 0.0,
+      "false_alarm": 44.68000000000005,
+      "speaker_count_ref": 8,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.17704099529283962,
+      "confusion": 53.520000000000024,
+      "miss": 0.0,
+      "false_alarm": 3.010874999999974,
+      "speaker_count_ref": 8,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "akthc",
+    "reference_speakers": 2,
+    "resemblyzer": {
+      "der": 0.18219855458349152,
+      "confusion": 0.0,
+      "miss": 0.0,
+      "false_alarm": 9.419999999999984,
+      "speaker_count_ref": 2,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.06323697223278785,
+      "confusion": 0.0,
+      "miss": 0.0,
+      "false_alarm": 0.9299999999999926,
+      "speaker_count_ref": 2,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "ampme",
+    "reference_speakers": 3,
+    "resemblyzer": {
+      "der": 0.3224912485414233,
+      "confusion": 11.299999999999997,
+      "miss": 0.0,
+      "false_alarm": 14.939999999999978,
+      "speaker_count_ref": 3,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.20689906651108494,
+      "confusion": 5.0,
+      "miss": 0.0,
+      "false_alarm": 0.2600000000000193,
+      "speaker_count_ref": 3,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "asxwr",
+    "reference_speakers": 3,
+    "resemblyzer": {
+      "der": 0.36879549966909353,
+      "confusion": 64.39999999999996,
+      "miss": 0.0,
+      "false_alarm": 10.86000000000007,
+      "speaker_count_ref": 3,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.38710523866644614,
+      "confusion": 75.35999999999997,
+      "miss": 0.0,
+      "false_alarm": 0.5165625000000205,
+      "speaker_count_ref": 3,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "atgpi",
+    "reference_speakers": 1,
+    "resemblyzer": {
+      "der": 1.0362149532710276,
+      "confusion": 23.760000000000012,
+      "miss": 0.0,
+      "false_alarm": 92.73999999999995,
+      "speaker_count_ref": 1,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.1065754339118826,
+      "confusion": 1.619999999999985,
+      "miss": 0.0,
+      "false_alarm": 0.10200000000000742,
+      "speaker_count_ref": 1,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "aufkn",
+    "reference_speakers": 3,
+    "resemblyzer": {
+      "der": 0.31777493606138085,
+      "confusion": 29.680000000000003,
+      "miss": 0.0,
+      "false_alarm": 4.939999999999976,
+      "speaker_count_ref": 3,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.3474531116794542,
+      "confusion": 27.960000000000008,
+      "miss": 0.0,
+      "false_alarm": 0.02999999999999403,
+      "speaker_count_ref": 3,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "azisu",
+    "reference_speakers": 4,
+    "resemblyzer": {
+      "der": 0.4851653261840928,
+      "confusion": 52.279999999999994,
+      "miss": 0.0,
+      "false_alarm": 24.059999999999967,
+      "speaker_count_ref": 4,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.43094727435210006,
+      "confusion": 58.130000000000024,
+      "miss": 0.0,
+      "false_alarm": 0.21599999999998687,
+      "speaker_count_ref": 4,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "bauzd",
+    "reference_speakers": 5,
+    "resemblyzer": {
+      "der": 0.33490527012492827,
+      "confusion": 24.240000000000027,
+      "miss": 0.0,
+      "false_alarm": 53.80000000000027,
+      "speaker_count_ref": 5,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.2771159096550007,
+      "confusion": 44.04999999999994,
+      "miss": 0.0,
+      "false_alarm": 0.9200000000000417,
+      "speaker_count_ref": 5,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "bdopb",
+    "reference_speakers": 7,
+    "resemblyzer": {
+      "der": 0.7403718164877099,
+      "confusion": 498.05999999999983,
+      "miss": 0.0,
+      "false_alarm": 113.92000000000013,
+      "speaker_count_ref": 7,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.5551513000266223,
+      "confusion": 413.52000000000004,
+      "miss": 0.0,
+      "false_alarm": 6.609999999999999,
+      "speaker_count_ref": 7,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "bkwns",
+    "reference_speakers": 2,
+    "resemblyzer": {
+      "der": 0.46049382716049386,
+      "confusion": 0.01999999999999602,
+      "miss": 0.0,
+      "false_alarm": 22.360000000000003,
+      "speaker_count_ref": 2,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.08292181069958815,
+      "confusion": 2.479999999999997,
+      "miss": 0.0,
+      "false_alarm": 1.4499999999999957,
+      "speaker_count_ref": 2,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "blwmj",
+    "reference_speakers": 2,
+    "resemblyzer": {
+      "der": 0.27764797507788147,
+      "confusion": 36.720000000000006,
+      "miss": 0.0,
+      "false_alarm": 24.13999999999998,
+      "speaker_count_ref": 2,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.1919037188473521,
+      "confusion": 39.110000000000014,
+      "miss": 0.0,
+      "false_alarm": 0.9908749999999978,
+      "speaker_count_ref": 2,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "bravd",
+    "reference_speakers": 3,
+    "resemblyzer": {
+      "der": 0.5238924188354073,
+      "confusion": 56.46000000000007,
+      "miss": 0.0,
+      "false_alarm": 112.13999999999979,
+      "speaker_count_ref": 3,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.27724345025676733,
+      "confusion": 41.9799999999999,
+      "miss": 0.0,
+      "false_alarm": 1.9200000000000121,
+      "speaker_count_ref": 3,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "bspxd",
+    "reference_speakers": 3,
+    "resemblyzer": {
+      "der": 0.6860244519392917,
+      "confusion": 107.46,
+      "miss": 0.0,
+      "false_alarm": 90.35999999999997,
+      "speaker_count_ref": 3,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.39507799325463755,
+      "confusion": 81.96999999999994,
+      "miss": 0.0,
+      "false_alarm": 0.29000000000002046,
+      "speaker_count_ref": 3,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "bwzyf",
+    "reference_speakers": 4,
+    "resemblyzer": {
+      "der": 0.7221570926143024,
+      "confusion": 14.48,
+      "miss": 0.0,
+      "false_alarm": 28.7,
+      "speaker_count_ref": 4,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.2132180539273155,
+      "confusion": 7.959999999999998,
+      "miss": 0.0,
+      "false_alarm": 0.350000000000005,
+      "speaker_count_ref": 4,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "bxpwa",
+    "reference_speakers": 5,
+    "resemblyzer": {
+      "der": 0.3148843644989128,
+      "confusion": 70.79999999999993,
+      "miss": 0.0,
+      "false_alarm": 26.00000000000008,
+      "speaker_count_ref": 5,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.18143407788100419,
+      "confusion": 25.200000000000003,
+      "miss": 0.0,
+      "false_alarm": 1.4600000000000293,
+      "speaker_count_ref": 5,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "bydui",
+    "reference_speakers": 3,
+    "resemblyzer": {
+      "der": 0.34434831938732097,
+      "confusion": 58.920000000000016,
+      "miss": 0.0,
+      "false_alarm": 26.439999999999994,
+      "speaker_count_ref": 3,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.376939441214012,
+      "confusion": 89.34000000000002,
+      "miss": 0.0,
+      "false_alarm": 0.4319999999999595,
+      "speaker_count_ref": 3,
+      "speaker_count_hyp": 2
+    }
+  },
+  {
+    "file": "ccokr",
+    "reference_speakers": 5,
+    "resemblyzer": {
+      "der": 0.6739581369036397,
+      "confusion": 76.53999999999996,
+      "miss": 0.0,
+      "false_alarm": 36.14000000000007,
+      "speaker_count_ref": 5,
+      "speaker_count_hyp": 2
+    },
+    "pyannote": {
+      "error": "No module named 'pyannote.audio'"
+    },
+    "onnx": {
+      "der": 0.620130115029229,
+      "confusion": 93.56000000000002,
+      "miss": 0.0,
+      "false_alarm": 1.742000000000001,
+      "speaker_count_ref": 5,
       "speaker_count_hyp": 2
     }
   }

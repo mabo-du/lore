@@ -36,7 +36,6 @@ from models.transcript_model import TranscriptListModel
 from lore_core.ohms_exporter import OhmsExporter
 from ui.settings_dialog import SettingsDialog
 from PyQt6.QtCore import QSettings
-from utils.token_vault import decrypt_token
 
 
 class AudioLoadWorker(QThread):
@@ -247,8 +246,6 @@ class MainWindow(QMainWindow):
                 old.wait(2000)
 
         settings = QSettings("HeritageTools", "Lore")
-        use_pyannote = settings.value("diarization/use_pyannote", False, type=bool)
-        hf_token = decrypt_token(settings.value("diarization/hf_token", ""))
 
         enable_diarization = self.chk_diarize.isChecked()
 
@@ -271,8 +268,6 @@ class MainWindow(QMainWindow):
             self.working_audio_path,
             quality_tier=quality_tier,
             enable_diarization=enable_diarization,
-            use_pyannote=use_pyannote,
-            hf_token=hf_token,
             custom_vocab=custom_vocab,
             num_speakers=num_speakers,
         )
@@ -390,8 +385,6 @@ class MainWindow(QMainWindow):
 
         settings = QSettings("HeritageTools", "Lore")
         enable_diarization = settings.value("diarization/enabled", False, type=bool)
-        use_pyannote = settings.value("diarization/use_pyannote", False, type=bool)
-        hf_token = decrypt_token(settings.value("diarization/hf_token", ""))
         custom_vocab = settings.value("transcription/custom_vocab", "")
         quality_tier = settings.value("transcription/model_tier", "Best Quality")
         num_speakers = settings.value("diarization/num_speakers", 2, type=int)
@@ -407,8 +400,6 @@ class MainWindow(QMainWindow):
             self.working_audio_path,
             quality_tier=quality_tier,
             enable_diarization=enable_diarization,
-            use_pyannote=use_pyannote,
-            hf_token=hf_token,
             custom_vocab=custom_vocab,
             num_speakers=num_speakers,
         )
